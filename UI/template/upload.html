@@ -3,12 +3,29 @@
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<title>Upload image</title>
+	<link rel="stylesheet" type="text/css" href="/static/style.css" />
+	<script type="text/javascript" src="/static/jquery.js"></script>
+	<script type="text/javascript" src="/static/main.js"></script>
 </head>
 <body>
-	<p>Upload image.</p>
-	<form action="" method="post" enctype="multipart/form-data">
+	<h1>Spatially Invariant Vector Quantization</h1>
+	<form action="/upload/" method="post" enctype="multipart/form-data" id="uploadForm" target="uploadResponse">
+		Upload image:
 		<input type="file" name="image" />
 		<input type="submit" value="Upload" />
 	</form>
+	<iframe name="uploadResponse" id="uploadResponse" src="javascript:;" style="display:none;"></iframe>
+	<form id="optionsForm" action="" method="post">
+	  <p>Image: <input id="imageName" type="text" disabled="disabled" /></p>
+	  <p>vector x: <input id="vectorX" type="text" class="small" /></p>
+	  <p>vector y: <input id="vectorY" type="text" class="small" /></p>
+	  <p>vector radius: <input id="vectorRadius" type="text" class="small" /></p>
+	  <p><input type="submit" value="SIVQ" /></p>
+	</form>
+	<div id="original"></div>
+	<div id="result"></div>
+	<script>
+	main.init();
+	</script>
 </body>
 </html>
