@@ -1,2 +1,6 @@
 *.8
 *.jpg
+*.png
+
+!data/*
+upload/*

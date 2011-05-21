@@ -1,13 +1,11 @@
-# Copyright 2009 The Go Authors.  All rights reserved.
-# Use of this source code is governed by a BSD-style
-# license that can be found in the LICENSE file.
+all: server sivq
 
-include ${GOROOT}/src/Make.inc
+server:
+	make -f Makefile.server
 
-TARG=main
+sivq:
+	make -f Makefile.sivq
 
-GOFILES=\
-    main.go
-
-
-include ${GOROOT}/src/Make.cmd
+clean:
+	make -f Makefile.server clean
+	make -f Makefile.sivq clean
