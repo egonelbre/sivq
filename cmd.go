@@ -7,6 +7,7 @@ import (
     _ "image/jpeg"
     "log"
     "os"
+    "runtime"
 )
 
 var (
@@ -24,6 +25,8 @@ var (
 )
 
 func main() {
+    runtime.GOMAXPROCS(4)
+    
     flag.Parse()
     
     if *inputName == "" {

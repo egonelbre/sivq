@@ -150,13 +150,37 @@ func makeHeatMap(p SIVQParameters, input *image.RGBA, output *image.RGBA, rv *Ri
         p.RotationStride = minStride
     }
     
-    r := rv.EmptyClone()
+    quit := make(chan int) // external
+    cancel := make(chan int)
+    done := make(chan int)
+        
+    routineCount := 0   
+    
     for y := startAtY ; y < stopAtY; y++ {
-        for x := startAtX; x < stopAtX; x++ {
-            r.LoadData(input, x, y)
-            h := 1.0 - rv.Diff(r, p)
-            c := (*input).At(x, y).(image.RGBAColor)
-            output.Set(x, y, highlightColor(c, h))
+        routineCount += 1
+        go func(y int){
+            r := rv.EmptyClone()
+            for x := startAtX; x < stopAtX; x++ {
+                r.LoadData(input, x, y)
+                h := 1.0 - rv.Diff(r, p)
+                c := (*input).At(x, y).(image.RGBAColor)
+                output.Set(x, y, highlightColor(c, h))
+                select {
+                    case <-cancel : break
+                    default:
+                }
+            }
+            done <- y
+        }(y)
+    }
+    
+    for i := 1; i < routineCount; i++ {
+        select {
+        case <-done:
+        case <-quit:
+            for j := i; j < routineCount; j++ {
+                cancel <- 1
+            }
         }
     }
 }
