@@ -128,7 +128,7 @@ func (A *RingVector) Diff(B *RingVector, p SIVQParameters) (best float){
     return best
 }
 
-func highlightColor(a image.RGBAColor, h float) image.RGBAColor{
+func highlightColor(p SIVQParameters, a image.RGBAColor, h float) image.RGBAColor{
     h = 1.0 - h
     // adjust gamma for clarity
     h = float(math.Pow(float64(h), float64(p.GammaAdjustment)))
@@ -170,7 +170,7 @@ func makeHeatMap(p SIVQParameters, input *image.RGBA, output *image.RGBA, rv *Ri
             for x := startAtX; x < stopAtX; x++ {
                 r.LoadData(input, x, y)
                 c := (*input).At(x, y).(image.RGBAColor)
-                output.Set(x, y, highlightColor(c, rv.Diff(r, p)))
+                output.Set(x, y, highlightColor(p, c, rv.Diff(r, p)))
                 select {
                     case <-cancel : break
                     default:
@@ -180,7 +180,7 @@ func makeHeatMap(p SIVQParameters, input *image.RGBA, output *image.RGBA, rv *Ri
         }(y)
     }
     
-    for i := 1; i < routineCount; i++ {
+    for i := 0; i < routineCount; i++ {
         select {
         case <-done:
         case <-quit:
