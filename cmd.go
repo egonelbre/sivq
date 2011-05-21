@@ -18,10 +18,11 @@ var (
     vectorSize  = flag.Int("S",  4, "vector radius")
     vectorRings = flag.Int("R", 1, "vector rings")
     ringSizeInc = flag.Int("I", 2, "ring size increment")
-    threshold   = flag.Float64("T", 0.4, "threshold for drawing")
+    threshold   = flag.Float64("T", 0.0, "threshold for drawing")
     rotStride   = flag.Float64("K", 0.001, "rotation stride")
     matchStride = flag.Int("M", 1, "matching value stride (can be set to 3 for grayscale pictures)")
     matchOffset = flag.Int("O", 0, "matching offset")
+    gammaAdj    = flag.Float64("g", 2.0, "gamma adjust")
 )
 
 func main() {
@@ -64,6 +65,7 @@ func main() {
         RadiusInc : *ringSizeInc}
     
     sivqParams := SIVQParameters {
+        GammaAdjustment : float(*gammaAdj),
         RotationStride : float(*rotStride),
         MatchingStride : *matchStride,
         MatchingOffset : *matchOffset,

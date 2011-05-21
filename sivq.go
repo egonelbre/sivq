@@ -22,6 +22,7 @@ type RingVectorParameters struct {
 }
 
 type SIVQParameters struct {
+    GammaAdjustment float // for making images darker
     RotationStride float // for calculating all possible rotations
     MatchingStride int   // for comparing less values
     MatchingOffset int   // for using different colors as comparison
@@ -119,16 +120,22 @@ func (A *RingVector) Diff(B *RingVector, p SIVQParameters) (best float){
         if best > total {
             best = total
         }
-        if best <= 0.005 {
+        if best <= 0.000025 {
             break
         }
     }
-
-    return
+    best = float(math.Sqrt(float64(best)))
+    return best
 }
 
 func highlightColor(a image.RGBAColor, h float) image.RGBAColor{
-    if(h > 1.0 ){ h = 1.0 }
+    h = 1.0 - h
+    // adjust gamma for clarity
+    h = float(math.Pow(float64(h), float64(p.GammaAdjustment)))
+    if h > 1.0 { h = 1.0 } else if h < 0.0 { h = 0.0 }
+    if h < p.Threshold {
+        return image.RGBAColor{0,0,0,255}
+    }
     c := uint8(h * 255.0)
     return image.RGBAColor{c,c,c,255}
 }
@@ -162,9 +169,8 @@ func makeHeatMap(p SIVQParameters, input *image.RGBA, output *image.RGBA, rv *Ri
             r := rv.EmptyClone()
             for x := startAtX; x < stopAtX; x++ {
                 r.LoadData(input, x, y)
-                h := 1.0 - rv.Diff(r, p)
                 c := (*input).At(x, y).(image.RGBAColor)
-                output.Set(x, y, highlightColor(c, h))
+                output.Set(x, y, highlightColor(c, rv.Diff(r, p)))
                 select {
                     case <-cancel : break
                     default:
