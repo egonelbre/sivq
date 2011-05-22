@@ -3,6 +3,7 @@ package main
 import (
     "image"
     "math"
+    _ "log"
 )
 
 var (
@@ -95,8 +96,20 @@ func (rv *RingVector) LoadData(input *image.RGBA, X int, Y int){
     }
 }
 
+type RingDiff struct {
+    Base int
+    Diff float
+    DiffCount int
+}
+
 func (A *RingVector) Diff(B *RingVector, p SIVQParameters) (best float){
     best = float(math.Inf(1))
+    
+    cache := make(map[int] * RingDiff)
+    for ri, _ := range A.Rings {
+        cache[ri] = &RingDiff{Base: -1}
+    }
+    
     for rotation := float(0.0); rotation < Tau; rotation += p.RotationStride {
         total := float(0.0)
         totalCount := 0
@@ -106,15 +119,30 @@ func (A *RingVector) Diff(B *RingVector, p SIVQParameters) (best float){
 
             stride := A.Rings[ri].Stride
             dataCount := len(*dA)
+
+            diff := float(0.0)
+            diffCount := 0
             
             base := int((rotation / Tau) * float(dataCount))
-            base = base - base % stride
-                                    
-            for i := p.MatchingOffset; i < dataCount; i += p.MatchingStride {
-                d := (*dA)[i] - (*dB)[ (base + i) % dataCount ]
-                total += d * d
-                totalCount += 1
+            base = base - base % stride                            
+
+            cacheVal, _ := cache[ri]
+            if cacheVal.Base != base {
+                for i := p.MatchingOffset; i < dataCount; i += p.MatchingStride {
+                    d := (*dA)[i] - (*dB)[ (base + i) % dataCount ]
+                    diff += d * d
+                    diffCount += 1
+                }
+                cacheVal.Base = base
+                cacheVal.Diff = diff
+                cacheVal.DiffCount = diffCount
+            } else {
+                diff = cacheVal.Diff
+                diffCount = cacheVal.DiffCount
             }
+            
+            total += diff
+            totalCount += diffCount
         }
         total = total / float(totalCount)
         if best > total {
