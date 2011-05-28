@@ -14,6 +14,8 @@ var main = {
 	inputX: null,
 	inputY: null,
 	inputImageName: null,
+	buttonStop: null,
+	buttonSIVQ: null,
 	
 	/*
 	 * Original image
@@ -95,27 +97,6 @@ var main = {
 	hideError: function() {
 		$("#uploadForm").prev(".error").hide()
 	},
-	
-	/*
-	 * Get resulting image
-	 */
-	calcResult: function(form) {
-		main.divResult.show().html('Loading...').css({width: "auto", height: "auto"});
-		
-		var imageUrl = "/result/"+ main.inputImageName.val() +"?x="+ parseInt(main.inputX.val())
-							+"&y="+ parseInt(main.inputY.val()) +"&r="+ parseInt(main.inputRadius.val());
-		var loadImage = new Image();
-		loadImage.onload = function() {
-			var width = loadImage.width;
-			var height = loadImage.height;
-
-			console.log("Result image ("+ width +" x "+ height +"; "+ imageUrl +")");
-
-			main.divResult.show().html('<img src="'+ imageUrl +'" alt="" />')
-				.css({width: width, height: height});
-		};
-		loadImage.src = imageUrl;
-	},
 
 	/*
 	 * Get coordinates from click on image 
@@ -184,12 +165,17 @@ var main = {
 		main.inputX = $("#vectorX").keyup(main.vectorChanged);
 		main.inputY = $("#vectorY").keyup(main.vectorChanged);
 		main.inputImageName = $("#imageName");
+		main.buttonSIVQ = $("#sivq");
+		main.buttonStop = $("#stop").click(function(e) {
+			e.preventDefault();
+			process.stop();
+		});
 
 		$("#uploadResponse").load(main.processUpload);
 		$("#original").delegate("canvas", "click", main.coordinates);
 		$("#optionsForm").submit(function(e) {
 			e.preventDefault();
-			main.calcResult($(this));
+			process.process();
 		});
 	}
 };

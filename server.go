@@ -8,11 +8,14 @@ import (
 	"http"
 	"json"
 	"strings"
+	"websocket"
 )
 
-const UploadDir = "upload/"
-const TemplateDir = "template/"
-const StaticDir = "static/"
+const (
+	UploadDir = "upload/"
+	TemplateDir = "template/"
+	StaticDir = "static/"
+)
 
 type UploadResult struct {
 	Error bool
@@ -20,8 +23,30 @@ type UploadResult struct {
 	Image string
 }
 
-var uploadTemplate = template.MustParseFile(TemplateDir + "upload.html", nil)
-var errorTemplate = template.MustParseFile(TemplateDir + "error.html", nil)
+type ProcessInput struct {
+	Image string
+	VecX int
+	VecY int
+	Radius int
+	VectorRings int
+	RingSizeInc int
+	Threshold float64
+	RotationStride float64
+	MatchStride int
+	MatchingOffset int
+	GammaAdjust float64
+}
+
+type Work struct {
+    conn		*websocket.Conn
+    input		*ProcessInput
+}
+
+var (
+	uploadTemplate = template.MustParseFile(TemplateDir + "upload.html", nil)
+	errorTemplate = template.MustParseFile(TemplateDir + "error.html", nil)
+	workChan = make(chan Work)
+)
 
 /*
  * Check for error and panic if needed
@@ -82,19 +107,6 @@ func imgHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
- * Display result image
- */
-func resultHandler(w http.ResponseWriter, r *http.Request) {
-	fileName := r.URL.Path[8:]
-	w.Header().Set("Content-Type", "image")
-	
-	// TODO: calculate result image
-	//r.FormValue("vecX")
-
-	http.ServeFile(w, r, UploadDir + fileName);
-}
-
-/*
  * Handle static files
  */
 func staticHandler(w http.ResponseWriter, r *http.Request) {
@@ -137,11 +149,54 @@ func uploadErrorHandler(fn http.HandlerFunc) http.HandlerFunc {
  */
 func main() {
 	fmt.Println("Server started.")
+	
+	go hub()
 
 	http.HandleFunc("/", errorHandler(indexHandler))
 	http.HandleFunc("/upload/", uploadErrorHandler(uploadHandler))
 	http.HandleFunc("/static/", errorHandler(staticHandler))
 	http.HandleFunc("/img/", errorHandler(imgHandler))
-	http.HandleFunc("/result/", errorHandler(resultHandler))
+	http.Handle("/process", websocket.Handler(clientHandler))
 	http.ListenAndServe(":8080", nil)
+}
+
+
+
+func hub() {
+    for {
+        select {
+		case work := <-workChan:
+			// DO WHAT IS NEEDED
+
+			response, _ := json.MarshalForHTML(&UploadResult{Image: "letters.png", Error: false, Message: "Processed."})
+			work.conn.Write(response);
+			work.conn.Close();
+        }
+    }
+}
+
+
+func clientHandler(ws *websocket.Conn) {
+    defer func() {
+        ws.Close()
+    }()
+
+    buf := make([]byte, 256)
+    var input ProcessInput
+    for {
+        n, err := ws.Read(buf)
+        if err != nil {
+            break
+        }
+
+        // get data
+        err = json.Unmarshal(buf[0:n], &input);
+        if err != nil {
+        	// close connection
+        	ws.Write([]byte("Connection closed."+ err.String()));
+			break
+		}
+		
+		workChan <- Work{ws, &input}
+    }
 }

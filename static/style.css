@@ -54,3 +54,6 @@ input.small {
 	background: #FADFDC;
 	color: #FF3300;
 }
+#stop {
+	display: none;
+}
