@@ -9,6 +9,7 @@ import (
 	"json"
 	"strings"
 	"websocket"
+	"time"
 )
 
 const (
@@ -167,6 +168,13 @@ func hub() {
         select {
 		case work := <-workChan:
 			// DO WHAT IS NEEDED
+			
+			work.conn.Write([]byte("25"));
+			time.Sleep(1000000000);
+			work.conn.Write([]byte("50"));
+			time.Sleep(1000000000);
+			work.conn.Write([]byte("75"));
+			time.Sleep(1000000000);
 
 			response, _ := json.MarshalForHTML(&UploadResult{Image: "letters.png", Error: false, Message: "Processed."})
 			work.conn.Write(response);
@@ -197,6 +205,7 @@ func clientHandler(ws *websocket.Conn) {
 			break
 		}
 		
+		ws.Write([]byte("0"));
 		workChan <- Work{ws, &input}
     }
 }

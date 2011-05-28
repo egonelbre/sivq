@@ -8,7 +8,16 @@ var process = {
 	 */
 	connection: null,
 	
+	/*
+	 * Loader bar
+	 */
+	divLoader: null,
+	
 	process: function() {
+		if (process.connection != null) {
+			return;
+		}
+
 		// input
 		var input = {
 				vecX: parseInt(main.inputX.val()),
@@ -56,6 +65,11 @@ var process = {
 	    process.connection.onopen = function() {
 			process.connection.send(JSON.stringify(input));
 		}
+
+	    // loader
+	    process.divLoader = $(document.createElement("div")).addClass("loader");
+	    main.divResult.show().empty()
+	    	.append(process.divLoader);
 	},
 	
 	serverMessage: function(e) {
@@ -65,9 +79,9 @@ var process = {
 			data = JSON.parse(data);
 
 			// response
-			main.divResult.show().html('<img src="/img/'+ data.Image +'" alt="" />')
+			main.divResult.html('<img src="/img/'+ data.Image +'" alt="" />')
 		} else {
-			//
+			process.divLoader.width(parseInt(data) + "%");
 		}
 	},
 
