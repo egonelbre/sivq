@@ -27,8 +27,18 @@ p {
 	border: 1px solid #CCC;
 	margin: 4px 0;
 	padding: 6px;
+	overflow: auto;
 }
-#optionsForm>p {
+#optionsForm>div {
+	float: left;
+	width: 70%;
+}
+#optionsForm>fieldset {
+	float: right;
+	width: 25%;
+	border: 1px solid #CCC;
+}
+#optionsForm>div>p {
 	display: inline;
 	margin-right: 10px;
 }

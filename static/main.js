@@ -16,6 +16,9 @@ var main = {
 	inputImageName: null,
 	buttonStop: null,
 	buttonSIVQ: null,
+	inputNewVectorName: null,
+	buttonSaveNewVector: null,
+	selectVector: null,
 	
 	/*
 	 * Original image
@@ -167,9 +170,15 @@ var main = {
 		main.inputImageName = $("#imageName");
 		main.buttonSIVQ = $("#sivq");
 		main.buttonStop = $("#stop").click(function(e) {
-			e.preventDefault();
 			process.stop();
+			return false;
 		});
+		main.inputNewVectorName = $("#newVectorName");
+		main.buttonSaveNewVector = $("#saveNewVector").click(function(e) {
+			process.saveVector();
+			return false;
+		});
+		main.selectVector = $("#vectorSelector");
 
 		$("#uploadResponse").load(main.processUpload);
 		$("#original").delegate("canvas", "click", main.coordinates);

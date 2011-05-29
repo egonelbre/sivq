@@ -21,20 +21,7 @@ var process = {
 			return;
 		}
 
-		// input
-		var input = {
-				vecX: parseInt(main.inputX.val()),
-				vecY: parseInt(main.inputY.val()),
-				radius: parseInt(main.inputRadius.val()),
-				image: main.inputImageName.val(),
-				vectorRings: parseInt($("#vectorRings").val()),
-				ringSizeInc: parseInt($("#ringSizeInc").val()),
-				threshold: parseFloat($("#threshold").val()),
-				rotationStride: parseFloat($("#rotationStride").val()),
-				matchStride: parseInt($("#matchStride").val()),
-				matchingOffset: parseInt($("#matchingOffset").val()),
-				gammaAdjust: parseFloat($("#gammaAdjust").val())
-			};
+		var input = process.getInput();
 		if (isNaN(input.vecX) || input.vecX < 0 || isNaN(input.vecY) || input.vecY < 0 || input.radius <= 0
 				|| input.image.length == 0) {
 			main.showError("Please fill in all fields.");
@@ -99,6 +86,48 @@ var process = {
 			return;
 		}
 		process.connection.send("stop");
+	},
+	
+	saveVector: function() {
+		var input = process.getInput();
+		input.vectorName = $.trim(main.inputNewVectorName.val());
+		
+		if (isNaN(input.vecX) || input.vecX < 0 || isNaN(input.vecY) || input.vecY < 0 || input.radius <= 0
+				|| input.image.length == 0 || input.vectorName.length == 0 || isNaN(input.vectorRings)
+				|| input.vectorRings <= 0 || isNaN(input.ringSizeInc)) {
+			main.showError("Could not save vector. Please make sure you have correctly selected vector.");
+			return;
+		} else {
+			main.hideError();
+		}
+
+		$.post("/saveVector", input, function(response) {
+			if (response.Error) {
+				main.showError(response.Message);
+				return;
+			}
+			main.selectVector.append('<option value="'+ input.vectorName +'">'+ input.vectorName +'</option>');
+			main.selectVector.val(input.vectorName);
+			main.inputNewVectorName.val("");
+			console.log(response);
+		}, "json");
+	},
+	
+	getInput: function() {
+		return {
+			vectorName: main.selectVector.val(),
+			vecX: parseInt(main.inputX.val()),
+			vecY: parseInt(main.inputY.val()),
+			radius: parseInt(main.inputRadius.val()),
+			image: main.inputImageName.val(),
+			vectorRings: parseInt($("#vectorRings").val()),
+			ringSizeInc: parseInt($("#ringSizeInc").val()),
+			threshold: parseFloat($("#threshold").val()),
+			rotationStride: parseFloat($("#rotationStride").val()),
+			matchStride: parseInt($("#matchStride").val()),
+			matchingOffset: parseInt($("#matchingOffset").val()),
+			gammaAdjust: parseFloat($("#gammaAdjust").val())
+		};
 	}
 
 };
