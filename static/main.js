@@ -61,7 +61,7 @@ var main = {
 		main.formOptions.show();
 
 		// load image
-		var imageUrl = "/img/"+ response.Image;
+		var imageUrl = "/img/upload/"+ response.Image;
 		main.imageOriginal = new Image();
 		main.imageOriginal.onload = function() {
 			var width = this.width;

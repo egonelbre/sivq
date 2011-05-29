@@ -12,7 +12,10 @@ var process = {
 	 * Loader bar
 	 */
 	divLoader: null,
-	
+
+	/*
+	 * Process image
+	 */
 	process: function() {
 		if (process.connection != null) {
 			return;
@@ -34,7 +37,7 @@ var process = {
 			};
 		if (isNaN(input.vecX) || input.vecX < 0 || isNaN(input.vecY) || input.vecY < 0 || input.radius <= 0
 				|| input.image.length == 0) {
-			main.showError("Please fill all fields.");
+			main.showError("Please fill in all fields.");
 			return;
 		} else {
 			main.hideError();
@@ -71,25 +74,31 @@ var process = {
 	    main.divResult.show().empty()
 	    	.append(process.divLoader);
 	},
-	
+
+	/*
+	 * Message from server
+	 */
 	serverMessage: function(e) {
 		var data = e.data;
 		console.log(data);
 		if (data.substr(0, 1) == "{") {
 			data = JSON.parse(data);
 
-			// response
-			main.divResult.html('<img src="/img/'+ data.Image +'" alt="" />')
+			// show result image
+			main.divResult.html('<img src="/img/result/'+ data.Image +'" alt="" />')
 		} else {
 			process.divLoader.width(parseInt(data) + "%");
 		}
 	},
 
+	/*
+	 * Stop processing image
+	 */
 	stop: function() {
 		if (process.connection == null) {
 			return;
 		}
 		process.connection.send("stop");
 	}
-	
+
 };

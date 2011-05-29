@@ -9,11 +9,14 @@ import (
 	"json"
 	"strings"
 	"websocket"
-	"time"
+	"image"
+	"image/png"
+	"log"
 )
 
 const (
-	UploadDir = "upload/"
+	UploadDir = "img/upload/"
+	ResultDir = "img/result/"
 	TemplateDir = "template/"
 	StaticDir = "static/"
 )
@@ -104,7 +107,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 func imgHandler(w http.ResponseWriter, r *http.Request) {
 	fileName := r.URL.Path[5:]
 	w.Header().Set("Content-Type", "image")
-	http.ServeFile(w, r, UploadDir + fileName);
+	http.ServeFile(w, r, "img/" + fileName);
 }
 
 /*
@@ -113,6 +116,50 @@ func imgHandler(w http.ResponseWriter, r *http.Request) {
 func staticHandler(w http.ResponseWriter, r *http.Request) {
 	fileName := r.URL.Path[8:]
 	http.ServeFile(w, r, StaticDir + fileName)
+}
+
+/*
+ * Get messages from client
+ */
+func clientHandler(ws *websocket.Conn) {
+    defer func() {
+        ws.Close()
+    }()
+
+    buf := make([]byte, 256)
+    var input ProcessInput
+    for {
+        n, err := ws.Read(buf)
+        if err != nil {
+            break
+        }
+
+        // get data
+        err = json.Unmarshal(buf[0:n], &input);
+        if err != nil {
+        	ws.Write([]byte("Connection closed."+ err.String()));
+			break
+		}
+
+		workChan <- Work{ws, &input}
+    }
+}
+
+/*
+ * Hub for processing work
+ */
+func hub() {
+    for {
+        select {
+		case work := <-workChan:
+			work.conn.Write([]byte("0"))
+			process(work.input)
+
+			response, _ := json.MarshalForHTML(&UploadResult{Image: work.input.Image, Error: false, Message: "Processed."})
+			work.conn.Write(response)
+			work.conn.Close()
+        }
+    }
 }
 
 /*
@@ -163,49 +210,46 @@ func main() {
 
 
 
-func hub() {
-    for {
-        select {
-		case work := <-workChan:
-			// DO WHAT IS NEEDED
-			
-			work.conn.Write([]byte("25"));
-			time.Sleep(1000000000);
-			work.conn.Write([]byte("50"));
-			time.Sleep(1000000000);
-			work.conn.Write([]byte("75"));
-			time.Sleep(1000000000);
-
-			response, _ := json.MarshalForHTML(&UploadResult{Image: "letters.png", Error: false, Message: "Processed."})
-			work.conn.Write(response);
-			work.conn.Close();
-        }
+func process(input *ProcessInput) {
+    // open input file
+    inputFile, err := os.OpenFile(UploadDir + input.Image, os.O_RDONLY, 0666)
+    if err != nil {
+        log.Fatalln("No input defined");
     }
-}
-
-
-func clientHandler(ws *websocket.Conn) {
-    defer func() {
-        ws.Close()
-    }()
-
-    buf := make([]byte, 256)
-    var input ProcessInput
-    for {
-        n, err := ws.Read(buf)
-        if err != nil {
-            break
-        }
-
-        // get data
-        err = json.Unmarshal(buf[0:n], &input);
-        if err != nil {
-        	// close connection
-        	ws.Write([]byte("Connection closed."+ err.String()));
-			break
-		}
-		
-		ws.Write([]byte("0"));
-		workChan <- Work{ws, &input}
+    defer inputFile.Close()
+    
+    // create output file
+    outputFile, err := os.OpenFile(ResultDir + input.Image, os.O_CREATE | os.O_WRONLY, 0666)    
+    if err != nil {
+		log.Fatalln(err)
     }
+    defer outputFile.Close()
+
+    // decode png image
+    inputImage, _, err := image.Decode(inputFile)
+    if err != nil {
+		log.Fatalln(err)
+    }
+    rgbaInput := rgba(inputImage)
+    
+    vectorParams := RingVectorParameters{ 
+        Radius : input.Radius,
+        Count : input.VectorRings,
+        RadiusInc : input.RingSizeInc}
+    
+    sivqParams := SIVQParameters {
+        GammaAdjustment : float(input.GammaAdjust),
+        RotationStride : float(input.RotationStride),
+        MatchingStride : input.MatchStride,
+        MatchingOffset : input.MatchingOffset,
+        Threshold : float(input.Threshold)}
+
+    ringVector := NewRingVector(vectorParams)
+    ringVector.LoadData(rgbaInput, input.VecX, input.VecY)
+
+    outputImage := SIVQ(sivqParams, rgbaInput, ringVector)
+    
+    if err = png.Encode(outputFile, outputImage); err != nil {
+        log.Fatalln(err) 
+    } 
 }
