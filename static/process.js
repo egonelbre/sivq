@@ -22,7 +22,7 @@ var process = {
 		}
 
 		var input = process.getInput();
-		if (isNaN(input.vecX) || input.vecX < 0 || isNaN(input.vecY) || input.vecY < 0 || input.radius <= 0
+		if (((input.vecX < 0 || input.vecY < 0 || input.radius <= 0 || input.vectorRings <= 0) && input.vectorName.length == 0)
 				|| input.image.length == 0) {
 			main.showError("Please fill in all fields.");
 			return;
@@ -92,9 +92,8 @@ var process = {
 		var input = process.getInput();
 		input.vectorName = $.trim(main.inputNewVectorName.val());
 		
-		if (isNaN(input.vecX) || input.vecX < 0 || isNaN(input.vecY) || input.vecY < 0 || input.radius <= 0
-				|| input.image.length == 0 || input.vectorName.length == 0 || isNaN(input.vectorRings)
-				|| input.vectorRings <= 0 || isNaN(input.ringSizeInc)) {
+		if (input.vecX < 0 || input.vecY < 0 || input.radius <= 0 || input.vectorRings <= 0
+				|| input.image.length == 0 || input.vectorName.length == 0) {
 			main.showError("Could not save vector. Please make sure you have correctly selected vector.");
 			return;
 		} else {
@@ -112,14 +111,17 @@ var process = {
 			console.log(response);
 		}, "json");
 	},
-	
+
+	/*
+	 * Create object of input values
+	 */
 	getInput: function() {
-		return {
-			vectorName: main.selectVector.val(),
+		var input = {
+			image: main.inputImageName.val(),
+			vectorName: $.trim(main.selectVector.val()),
 			vecX: parseInt(main.inputX.val()),
 			vecY: parseInt(main.inputY.val()),
 			radius: parseInt(main.inputRadius.val()),
-			image: main.inputImageName.val(),
 			vectorRings: parseInt($("#vectorRings").val()),
 			ringSizeInc: parseInt($("#ringSizeInc").val()),
 			threshold: parseFloat($("#threshold").val()),
@@ -128,6 +130,15 @@ var process = {
 			matchingOffset: parseInt($("#matchingOffset").val()),
 			gammaAdjust: parseFloat($("#gammaAdjust").val())
 		};
+
+		// remove NaNs
+		for (i in input) {
+			if (isNaN(input[i]) && i != "vectorName" && i != "image") {
+				input[i] = -1;
+			}
+		}
+
+		return input;
 	}
 
 };

@@ -123,7 +123,7 @@ var main = {
 	/*
 	 * Draw vector on original image
 	 */
-	drawVector: function() {
+	drawVector: function(clear) {
 		if (main.imageOriginal == null) {
 			return;
 		}
@@ -132,7 +132,7 @@ var main = {
 		var x = parseInt(main.inputX.val());
 		var y = parseInt(main.inputY.val());
 		var r = parseInt(main.inputRadius.val());
-		if (x < 0 || y < 0 || r <= 0) {
+		if ((x < 0 || y < 0 || r <= 0) && !clear) {
 			return;
 		}
 
@@ -141,10 +141,14 @@ var main = {
 		ctx.clearRect(0, 0, main.imageOriginal.width, main.imageOriginal.height);
 		ctx.drawImage(main.imageOriginal, 0, 0);
 
-		ctx.beginPath();
-		ctx.arc(x, y, r, 0, Math.PI*2, false); 
-		ctx.closePath();
-		ctx.stroke();
+		if (clear != true) {
+			ctx.beginPath();
+			ctx.arc(x, y, r, 0, Math.PI*2, false); 
+			ctx.closePath();
+			ctx.stroke();
+
+			main.selectVector.val("");
+		}
 	},
 	
 	/*
@@ -178,7 +182,9 @@ var main = {
 			process.saveVector();
 			return false;
 		});
-		main.selectVector = $("#vectorSelector");
+		main.selectVector = $("#vectorSelector").change(function(e) {
+			main.drawVector(true);
+		});
 
 		$("#uploadResponse").load(main.processUpload);
 		$("#original").delegate("canvas", "click", main.coordinates);

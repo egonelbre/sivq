@@ -36,22 +36,23 @@ type UploadPage struct {
 }
 
 type ProcessInput struct {
-	Image string
-	VecX int
-	VecY int
-	Radius int
-	VectorRings int
-	RingSizeInc int
-	Threshold float64
-	RotationStride float64
-	MatchStride int
-	MatchingOffset int
-	GammaAdjust float64
+	Image		string
+	VectorName	string
+	VecX		int
+	VecY		int
+	Radius		int
+	VectorRings	int
+	RingSizeInc	int
+	Threshold	float64
+	RotationStride	float64
+	MatchStride	int
+	MatchingOffset	int
+	GammaAdjust	float64
 }
 
 type Work struct {
-    conn		*websocket.Conn
-    input		*ProcessInput
+    conn	*websocket.Conn
+    input	*ProcessInput
 }
 
 var (
@@ -248,12 +249,7 @@ func process(input *ProcessInput) {
 		log.Fatalln(err)
     }
     rgbaInput := rgba(inputImage)
-    
-    vectorParams := RingVectorParameters{ 
-        Radius : input.Radius,
-        Count : input.VectorRings,
-        RadiusInc : input.RingSizeInc}
-    
+
     sivqParams := SIVQParameters {
         GammaAdjustment : float(input.GammaAdjust),
         RotationStride : float(input.RotationStride),
@@ -261,14 +257,37 @@ func process(input *ProcessInput) {
         MatchingOffset : input.MatchingOffset,
         Threshold : float(input.Threshold)}
 
-    ringVector := NewRingVector(vectorParams)
-    ringVector.LoadData(rgbaInput, input.VecX, input.VecY)
+	// get vector
+	var ringVector *RingVector;
+	if (len(input.VectorName) == 0) {
+	    vectorParams := RingVectorParameters{ 
+	        Radius : input.Radius,
+	        Count : input.VectorRings,
+	        RadiusInc : input.RingSizeInc}
+	
+	    ringVector = NewRingVector(vectorParams)
+	    ringVector.LoadData(rgbaInput, input.VecX, input.VecY)
+	} else {
+		// load vector from file
+		vectorFile, err := os.OpenFile(VectorDir + input.VectorName, os.O_RDONLY, 0666)
+		if (err != nil) {
+			log.Fatalln(err)
+		}
+    	defer vectorFile.Close()
 
-    outputImage := SIVQ(sivqParams, rgbaInput, ringVector)
-    
+		decoder := gob.NewDecoder(vectorFile)
+		err = decoder.Decode(&ringVector)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	// do the magic
+	outputImage := SIVQ(sivqParams, rgbaInput, ringVector)
+
     if err = png.Encode(outputFile, outputImage); err != nil {
-        log.Fatalln(err) 
-    } 
+        log.Fatalln(err)
+    }
 }
 
 /*
