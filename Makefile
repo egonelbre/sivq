@@ -17,6 +17,10 @@ test:
 	./sivq -in data/tumor.png -out test/tumor-pink.png       -X 460 -Y 170 -I 2 -S 5 -R 3 -M 6
 	./sivq -in data/tumor2x.png -out test/tumor2x-pink.png   -X 920 -Y 340 -I 2 -S 5 -R 3 -M 6
 
+format:
+	make -f Makefile.server format
+	make -f Makefile.sivq format
+
 clean:
 	make -f Makefile.server clean
 	make -f Makefile.sivq clean

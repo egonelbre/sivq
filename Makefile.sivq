@@ -14,3 +14,7 @@ GOFILES=\
 
 
 include ${GOROOT}/src/Make.cmd
+
+GOFMT=gofmt -s -spaces=true -tabindent=false -tabwidth=4
+format:
+	${GOFMT} -w ${GOFILES}
