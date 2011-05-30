@@ -48,7 +48,15 @@ p {
 	margin: 4px 0;
 	padding: 0;
 	position: relative;
+
+    float: left;
+    width: 49%;
+    overflow: scroll;
 }
+#result {
+	float: right;
+}
+
 #result>.loader {
 	width: 0%;
 	height: 40px;
@@ -63,13 +71,7 @@ input.small {
 	border: 1px solid #FF3300;
 	background: #FADFDC;
 	color: #FF3300;
-}h
+}
 #stop {
 	display: none;
-}
-
-.image {
-    float : left;
-    width : 45%;
-    overflow : scroll;
 }

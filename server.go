@@ -171,9 +171,15 @@ func hub() {
         select {
         case work := <-workChan:
             work.conn.Write([]byte("0"))
-            process(work.input, work.conn)
 
-            response, _ := json.MarshalForHTML(&UploadResult{Image: work.input.Image, Error: false, Message: "Processed."})
+			err := process(work.input, work.conn)
+			var response []byte
+			if (err != nil) {
+				response, _ = json.MarshalForHTML(&UploadResult{Image: "", Error: true, Message: err.String()})
+			} else {
+            	response, _ = json.MarshalForHTML(&UploadResult{Image: work.input.Image, Error: false, Message: "Processed."})
+            }
+
             work.conn.Write(response)
             work.conn.Close()
         }
@@ -228,28 +234,30 @@ func main() {
     http.ListenAndServe(":8080", nil)
 }
 
-
-func process(input *ProcessInput, conn *websocket.Conn) {
+/*
+ * Process image
+ */
+func process(input *ProcessInput, conn *websocket.Conn) os.Error {
 	log.Println(input)
 
     // open input file
     inputFile, err := os.OpenFile(UploadDir+input.Image, os.O_RDONLY, 0666)
     if err != nil {
-        log.Fatalln("No input defined")
+        return err
     }
     defer inputFile.Close()
 
     // create output file
     outputFile, err := os.OpenFile(ResultDir+input.Image, os.O_CREATE|os.O_WRONLY, 0666)
     if err != nil {
-        log.Fatalln(err)
+        return err
     }
     defer outputFile.Close()
 
     // decode png image
     inputImage, _, err := image.Decode(inputFile)
     if err != nil {
-        log.Fatalln(err)
+        return err
     }
     rgbaInput := rgba(inputImage)
 
@@ -279,14 +287,14 @@ func process(input *ProcessInput, conn *websocket.Conn) {
         // load vector from file
         vectorFile, err := os.OpenFile(VectorDir+input.VectorName, os.O_RDONLY, 0666)
         if err != nil {
-            log.Fatalln(err)
+            return err
         }
         defer vectorFile.Close()
 
         decoder := gob.NewDecoder(vectorFile)
         err = decoder.Decode(&ringVector)
         if err != nil {
-            log.Fatal(err)
+            return err
         }
     }
     log.Println(ringVector)
@@ -295,8 +303,9 @@ func process(input *ProcessInput, conn *websocket.Conn) {
     outputImage := SIVQ(sivqParams, rgbaInput, ringVector)
 
     if err = png.Encode(outputFile, outputImage); err != nil {
-        log.Fatalln(err)
+        return err
     }
+    return nil
 }
 
 /*

@@ -59,7 +59,7 @@ var process = {
 
 	    // loader
 	    process.divLoader = $(document.createElement("div")).addClass("loader");
-	    main.divResult.show().empty()
+	    main.divResult.empty()
 	    	.append(process.divLoader);
 	},
 
@@ -71,7 +71,14 @@ var process = {
 		console.log(data);
 		if (data.substr(0, 1) == "{") {
 			data = JSON.parse(data);
+
+			if (data.Error) {
+				main.showError(data.Message);
+				main.divResult.html(data.Message);
+				return;
+			}
 			process.divLoader.width("100%");
+			main.hideError();
 			
 			// load and show result image
 			var resultImage = new Image();

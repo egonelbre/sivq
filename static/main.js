@@ -85,7 +85,7 @@ var main = {
         main.divResult.show()
             .html('No results yet.')
     },
-    
+
     /*
      * Show error message
      */
@@ -112,7 +112,6 @@ var main = {
         var offset = $(this).offset();
         var vectorX = e.pageX - offset.left;
         var vectorY = e.pageY - offset.top;
-        console.log("Click at "+ vectorX +" "+ vectorY +"");
 
         main.inputX.val(vectorX);
         main.inputY.val(vectorY);
