@@ -78,7 +78,7 @@ var process = {
 			resultImage.onload = function() {
 				main.divResult.html('<img src="'+ resultImage.src +'" alt="" />')
 			};
-			resultImage.src = "/img/result/"+ data.Image;
+			resultImage.src = "/img/result/"+ data.Image +"?"+ Math.random();
 		} else {
 			process.divLoader.width(parseInt(parseFloat(data) * 100) + "%");
 		}
@@ -94,6 +94,9 @@ var process = {
 		process.connection.send("stop");
 	},
 	
+	/*
+	 * Save vector into file
+	 */
 	saveVector: function() {
 		var input = process.getInput();
 		input.vectorName = $.trim(main.inputNewVectorName.val());

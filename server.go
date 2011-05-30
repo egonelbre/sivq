@@ -230,6 +230,8 @@ func main() {
 
 
 func process(input *ProcessInput, conn *websocket.Conn) {
+	log.Println(input)
+
     // open input file
     inputFile, err := os.OpenFile(UploadDir+input.Image, os.O_RDONLY, 0666)
     if err != nil {
@@ -260,6 +262,7 @@ func process(input *ProcessInput, conn *websocket.Conn) {
         ProgressCallback: func(p float) {
             conn.Write([]byte(strconv.Ftoa32(float32(p), 'f', 4)))
         }}
+	log.Println(sivqParams);
 
     // get vector
     var ringVector *RingVector
@@ -268,6 +271,7 @@ func process(input *ProcessInput, conn *websocket.Conn) {
             Radius:    input.Radius,
             Count:     input.VectorRings,
             RadiusInc: input.RingSizeInc}
+        log.Println(vectorParams)
 
         ringVector = NewRingVector(vectorParams)
         ringVector.LoadData(rgbaInput, input.VecX, input.VecY)
@@ -285,6 +289,7 @@ func process(input *ProcessInput, conn *websocket.Conn) {
             log.Fatal(err)
         }
     }
+    log.Println(ringVector)
 
     // do the magic
     outputImage := SIVQ(sivqParams, rgbaInput, ringVector)
