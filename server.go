@@ -255,7 +255,7 @@ func process(input *ProcessInput, conn *websocket.Conn) {
         MatchingStride:  input.MatchStride,
         MatchingOffset:  input.MatchingOffset,
         Threshold:       float(input.Threshold),
-        Callback: func(p float) {
+        ProgressCallback: func(p float) {
             conn.Write([]byte(strconv.Ftoa32(float32(p), 'f', 4)))
         }}
 
