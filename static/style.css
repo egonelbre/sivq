@@ -63,7 +63,13 @@ input.small {
 	border: 1px solid #FF3300;
 	background: #FADFDC;
 	color: #FF3300;
-}
+}h
 #stop {
 	display: none;
+}
+
+.image {
+    float : left;
+    width : 45%;
+    overflow : scroll;
 }
