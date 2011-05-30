@@ -15,6 +15,7 @@ import (
     "log"
     "strconv"
     "gob"
+    "runtime"
 )
 
 const (
@@ -213,6 +214,7 @@ func uploadErrorHandler(fn http.HandlerFunc) http.HandlerFunc {
  * Start server
  */
 func main() {
+    runtime.GOMAXPROCS(4)
     fmt.Println("Server started.")
 
     go hub()

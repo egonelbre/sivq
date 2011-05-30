@@ -29,6 +29,7 @@ type SIVQParameters struct {
     MatchingOffset  int   // for using different colors as comparison
     Threshold       float // minimal value to be show on output
     ProgressCallback func(float)
+    StopCh          chan int
 }
 
 type RingVectorRing struct {
@@ -190,7 +191,6 @@ func makeHeatMap(p SIVQParameters, input *image.RGBA, output *image.RGBA, rv *Ri
         p.RotationStride = minStride
     }
 
-    quit := make(chan int) // external
     cancel := make(chan int)
     done := make(chan int)
 
@@ -218,7 +218,7 @@ func makeHeatMap(p SIVQParameters, input *image.RGBA, output *image.RGBA, rv *Ri
         select {
         case y := <-done:
             p.ProgressCallback(float(y-startAtY) / float(stopAtY-startAtY-1))
-        case <-quit:
+        case <-p.StopCh:
             for j := i; j < routineCount; j++ {
                 cancel <- 1
             }
@@ -227,14 +227,18 @@ func makeHeatMap(p SIVQParameters, input *image.RGBA, output *image.RGBA, rv *Ri
 }
 
 func SIVQ(p SIVQParameters, input *image.RGBA, rv *RingVector) *image.RGBA {
+    if p.ProgressCallback == nil { 
+        p.ProgressCallback = func(p float){}
+    }
+    if p.StopCh == nil {
+        p.StopCh = make(chan int)
+    }
+    
     dx := input.Bounds().Dx()
     dy := input.Bounds().Dy()
     output := image.NewRGBA(dx, dy)
     for i := range output.Pix {
         output.Pix[i] = image.RGBAColor{0, 0, 0, 255}
-    }
-    if p.ProgressCallback == nil { 
-        p.ProgressCallback = func(p float){}
     }
     makeHeatMap(p, input, output, rv)
     return output
