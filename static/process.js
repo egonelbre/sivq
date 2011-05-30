@@ -29,6 +29,7 @@ var process = {
 		} else {
 			main.hideError();
 		}
+		console.log(input);
 
 		// UI
 		main.buttonSIVQ.attr("disabled", "disabled");
@@ -70,11 +71,16 @@ var process = {
 		console.log(data);
 		if (data.substr(0, 1) == "{") {
 			data = JSON.parse(data);
-
-			// show result image
-			main.divResult.html('<img src="/img/result/'+ data.Image +'" alt="" />')
+			process.divLoader.width("100%");
+			
+			// load and show result image
+			var resultImage = new Image();
+			resultImage.onload = function() {
+				main.divResult.html('<img src="'+ resultImage.src +'" alt="" />')
+			};
+			resultImage.src = "/img/result/"+ data.Image;
 		} else {
-			process.divLoader.width(parseInt(data) + "%");
+			process.divLoader.width(parseInt(parseFloat(data) * 100) + "%");
 		}
 	},
 

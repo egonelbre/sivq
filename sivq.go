@@ -28,6 +28,7 @@ type SIVQParameters struct {
     MatchingStride int   // for comparing less values
     MatchingOffset int   // for using different colors as comparison
     Threshold float      // minimal value to be show on output
+    Callback func(float)
 }
 
 type RingVectorRing struct {
@@ -210,7 +211,10 @@ func makeHeatMap(p SIVQParameters, input *image.RGBA, output *image.RGBA, rv *Ri
     
     for i := 0; i < routineCount; i++ {
         select {
-        case <-done:
+        case y := <-done:
+        	if p.Callback != nil {
+        		p.Callback(float(y - startAtY) / float(stopAtY - startAtY - 1));
+        	}
         case <-quit:
             for j := i; j < routineCount; j++ {
                 cancel <- 1

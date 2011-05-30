@@ -170,7 +170,7 @@ func hub() {
         select {
 		case work := <-workChan:
 			work.conn.Write([]byte("0"))
-			process(work.input)
+			process(work.input, work.conn)
 
 			response, _ := json.MarshalForHTML(&UploadResult{Image: work.input.Image, Error: false, Message: "Processed."})
 			work.conn.Write(response)
@@ -228,7 +228,7 @@ func main() {
 
 
 
-func process(input *ProcessInput) {
+func process(input *ProcessInput, conn *websocket.Conn) {
     // open input file
     inputFile, err := os.OpenFile(UploadDir + input.Image, os.O_RDONLY, 0666)
     if err != nil {
@@ -255,7 +255,10 @@ func process(input *ProcessInput) {
         RotationStride : float(input.RotationStride),
         MatchingStride : input.MatchStride,
         MatchingOffset : input.MatchingOffset,
-        Threshold : float(input.Threshold)}
+        Threshold : float(input.Threshold),
+        Callback : func(p float) {
+				conn.Write([]byte(strconv.Ftoa32(float32(p), 'f', 4) ));
+			}}
 
 	// get vector
 	var ringVector *RingVector;
