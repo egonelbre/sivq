@@ -28,7 +28,6 @@ var process = {
 			return;
 		}
 		main.hideError();
-		console.log(input);
 
 		// UI
 		main.buttonSIVQ.attr("disabled", "disabled");
@@ -74,7 +73,7 @@ var process = {
 			main.divResult.html(data.Message);
 		} else if (data.length > 6) {
 			// image ready
-			main.divResult.html('<img src="data:image/gif;base64,'+ data +'" alt="" />');
+			main.divResult.html('<img src="data:image/png;base64,'+ data +'" alt="" />');
 		} else {
 			// loader status
 			process.divLoader.width(parseInt(parseFloat(data) * 100) + "%");

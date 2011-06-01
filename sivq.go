@@ -29,7 +29,7 @@ type SIVQParameters struct {
     MatchingOffset  int   // for using different colors as comparison
     Threshold       float // minimal value to be show on output
     ProgressCallback func(float)
-    StopCh          chan int
+    StopCh          chan bool
 }
 
 type RingVectorRing struct {
@@ -231,7 +231,7 @@ func SIVQ(p SIVQParameters, input *image.RGBA, rv *RingVector) *image.RGBA {
         p.ProgressCallback = func(p float){}
     }
     if p.StopCh == nil {
-        p.StopCh = make(chan int)
+        p.StopCh = make(chan bool)
     }
     
     dx := input.Bounds().Dx()

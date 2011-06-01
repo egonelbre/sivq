@@ -56,6 +56,7 @@ type ProcessInput struct {
 type Work struct {
     conn  *websocket.Conn
     input *ProcessInput
+    stopCh	chan bool
 }
 
 var (
@@ -147,6 +148,7 @@ func clientHandler(ws *websocket.Conn) {
     }()
 
     buf := make([]byte, 256)
+    stopCh := make(chan bool)
     var input ProcessInput
     for {
         n, err := ws.Read(buf)
@@ -157,11 +159,11 @@ func clientHandler(ws *websocket.Conn) {
         // get data
         err = json.Unmarshal(buf[0:n], &input)
         if err != nil {
-            ws.Write([]byte("Connection closed." + err.String()))
+        	stopCh <- true
             break
         }
 
-        workChan <- Work{ws, &input}
+        workChan <- Work{ws, &input, stopCh}
     }
 }
 
@@ -170,23 +172,22 @@ func clientHandler(ws *websocket.Conn) {
  */
 func hub() {
     for {
-        select {
-        case work := <-workChan:
-            work.conn.Write([]byte("0"))
+        work := <-workChan
 
-			err := process(work.input, work.conn)
+		work.conn.Write([]byte("0.01"))
 
-			var response []byte
-			if (err == nil) {
-				response, err = imageToBase64(ResultDir + work.input.Image);
-			}
-			if (err != nil) {
-				response, _ = json.MarshalForHTML(&UploadResult{Image: "", Error: true, Message: err.String()})
-			}
+		err := process(work.input, work.conn, work.stopCh)
 
-            work.conn.Write(response)
-            work.conn.Close()
-        }
+		var response []byte
+		if (err == nil) {
+			response, err = imageToBase64(ResultDir + work.input.Image);
+		}
+		if (err != nil) {
+			response, _ = json.MarshalForHTML(&UploadResult{Image: "", Error: true, Message: err.String()})
+		}
+
+		work.conn.Write(response)
+		work.conn.Close()
     }
 }
 
@@ -264,7 +265,7 @@ func main() {
 /*
  * Process image
  */
-func process(input *ProcessInput, conn *websocket.Conn) os.Error {
+func process(input *ProcessInput, conn *websocket.Conn, stopCh chan bool) os.Error {
 	log.Println(input)
 
     // open input file
@@ -296,7 +297,8 @@ func process(input *ProcessInput, conn *websocket.Conn) os.Error {
         Threshold:       float(input.Threshold),
         ProgressCallback: func(p float) {
             conn.Write([]byte(strconv.Ftoa32(float32(p), 'f', 4)))
-        }}
+        },
+        StopCh: stopCh}
 	log.Println(sivqParams);
 
     // get vector
