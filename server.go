@@ -16,6 +16,8 @@ import (
     "strconv"
     "gob"
     "runtime"
+    "encoding/base64"
+    "bytes"
 )
 
 const (
@@ -173,17 +175,42 @@ func hub() {
             work.conn.Write([]byte("0"))
 
 			err := process(work.input, work.conn)
+
 			var response []byte
+			if (err == nil) {
+				response, err = imageToBase64(ResultDir + work.input.Image);
+			}
 			if (err != nil) {
 				response, _ = json.MarshalForHTML(&UploadResult{Image: "", Error: true, Message: err.String()})
-			} else {
-            	response, _ = json.MarshalForHTML(&UploadResult{Image: work.input.Image, Error: false, Message: "Processed."})
-            }
+			}
 
             work.conn.Write(response)
             work.conn.Close()
         }
     }
+}
+
+/*
+ * Convert image to base 64
+ */
+func imageToBase64(image string) ([]byte, os.Error) {
+    imageFile, err := os.OpenFile(image, os.O_RDONLY, 0666)
+    if err != nil {
+        return nil, err
+    }
+    defer imageFile.Close()
+
+    imageData, err := ioutil.ReadAll(imageFile)
+    if (err != nil) {
+    	return nil, err
+    }
+
+	var buf bytes.Buffer
+	encoder := base64.NewEncoder(base64.StdEncoding, &buf)
+	encoder.Write(imageData)
+	encoder.Close()
+
+	return buf.Bytes(), nil
 }
 
 /*

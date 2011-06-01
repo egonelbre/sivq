@@ -26,9 +26,8 @@ var process = {
 				|| input.image.length == 0) {
 			main.showError("Please fill in all fields.");
 			return;
-		} else {
-			main.hideError();
 		}
+		main.hideError();
 		console.log(input);
 
 		// UI
@@ -68,25 +67,16 @@ var process = {
 	 */
 	serverMessage: function(e) {
 		var data = e.data;
-		console.log(data);
 		if (data.substr(0, 1) == "{") {
+			// error message
 			data = JSON.parse(data);
-
-			if (data.Error) {
-				main.showError(data.Message);
-				main.divResult.html(data.Message);
-				return;
-			}
-			process.divLoader.width("100%");
-			main.hideError();
-			
-			// load and show result image
-			var resultImage = new Image();
-			resultImage.onload = function() {
-				main.divResult.html('<img src="'+ resultImage.src +'" alt="" />')
-			};
-			resultImage.src = "/img/result/"+ data.Image +"?"+ Math.random();
+			main.showError(data.Message);
+			main.divResult.html(data.Message);
+		} else if (data.length > 6) {
+			// image ready
+			main.divResult.html('<img src="data:image/gif;base64,'+ data +'" alt="" />');
 		} else {
+			// loader status
 			process.divLoader.width(parseInt(parseFloat(data) * 100) + "%");
 		}
 	},
