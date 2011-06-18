@@ -15,7 +15,6 @@
         <input type="file" name="image" />
         <input type="submit" value="Upload" />
     </form>
-    <iframe name="uploadResponse" id="uploadResponse" src="javascript:;" style="display:none;"></iframe>
     <form id="optionsForm" action="" method="post">
         <div>
             <p>Image:&nbsp;<input id="imageName" type="text" disabled="disabled" /></p>
@@ -28,7 +27,10 @@
             <p>rotation&nbsp;stride:&nbsp;<input id="rotationStride" type="text" class="small" value="0.001" /></p>
             <p>matching&nbsp;value&nbsp;stride&nbsp;(3&nbsp;for&nbsp;grayscale&nbsp;pictures):&nbsp;<input id="matchStride" type="text" class="small" value="1" /></p>
             <p>matching&nbsp;offset:&nbsp;<input id="matchingOffset" type="text" class="small" value="0" /></p>
-            <p>gamma&nbsp;adjust:&nbsp;<input id="gammaAdjust" type="text" class="small" value="2.0" /></p>
+            <div>Advanced <input type="checkbox" id="advanced" /></div>
+            <div id="advancedOptions">
+            	<p>gamma adjust: <input id="gammaAdjust" type="text" class="small" value="2.0" /></p>
+            </div>
             <div>
                 <input type="submit" id="sivq" value="SIVQ" />
                 <button type="button" id="stop">Stop</button>
@@ -44,6 +46,7 @@
         <div id="original" class="image"></div>
         <div id="result" class="image"></div>
     </div>
+    <iframe name="uploadResponse" id="uploadResponse" src="javascript:;" style="display:none;"></iframe>
     <script>
     main.init();
     </script>

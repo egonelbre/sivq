@@ -10,6 +10,7 @@ var main = {
     divOriginal: null,
     divResult: null,
     formOptions: null,
+    formUpload: null,
     inputRadius: null,
     inputX: null,
     inputY: null,
@@ -19,6 +20,8 @@ var main = {
     inputNewVectorName: null,
     buttonSaveNewVector: null,
     selectVector: null,
+    inputAdvanced: null,
+    divAdvancedOptions: null,
     
     /*
      * Original image
@@ -45,32 +48,30 @@ var main = {
             main.showError(response.Message);
             return;
         }
-        main.hideError();
         
-        // show canvas
+        // prepare UI
         main.divOriginal.show();
-        main.canvasOriginal.width = 400;
-        main.canvasOriginal.height = 50;
+        main.divResult.show().html('No results yet.');
+        main.formOptions.show();
+        main.inputImageName.val(response.Image);
+        main.resizeResultView();
 
         // loading message
+        main.canvasOriginal.width = 400;
+        main.canvasOriginal.height = 50;
         var ctx = main.canvasOriginal.getContext("2d");
         ctx.fillStyle = "black";
         ctx.font="10pt Arial";
         ctx.textBaseline = "middle";
         ctx.clearRect(0,0,400,100);
         ctx.fillText("Loading image...", 10, 25);
-        
-        // show options form
-        main.formOptions.show();
-        
+
         // load image
         var imageUrl = "/img/upload/"+ response.Image;
         main.imageOriginal = new Image();
         main.imageOriginal.onload = function() {
             var width = this.width;
             var height = this.height;
-            
-            console.log("Image ("+ width +" x "+ height +"; "+ imageUrl +")");
             
             // resize canvas
             main.canvasOriginal.width = width;
@@ -80,25 +81,34 @@ var main = {
             ctx.drawImage(this, 0, 0);
         };
         main.imageOriginal.src = imageUrl;
-        
-        main.inputImageName.val(response.Image);
-        main.divResult.show()
-            .html('No results yet.')
+    },
+    
+    resizeResultView: function() {
+    	var viewHeight = $(window).height() - 20;
+    	
+    	// remove all other element heights
+    	$("h1:first").nextUntil("#images").filter(":visible").add($("h1:first")).each(function() {
+    		viewHeight -= $(this).outerHeight(true);
+    	});
+    	
+    	if (viewHeight < 200) {
+        	viewHeight = 200;
+        }
+
+        main.divOriginal.height(viewHeight);
+        main.divResult.height(viewHeight);
     },
 
-    /*
-     * Show error message
-     */
     showError: function(message) {
-        var errorDiv = $("#uploadForm").prev(".error");
-        if (errorDiv.size() == 0) {
-            errorDiv = $(document.createElement("div")).addClass("error")
-                            .insertBefore($("#uploadForm"));
-        }
-        errorDiv.show().html(message);
-    },
-    hideError: function() {
-        $("#uploadForm").prev(".error").hide()
+        var errorDiv = $(document.createElement("div")).addClass("error")
+        					.insertBefore(main.formUpload).html(message);
+        main.resizeResultView();
+
+        setTimeout(function() {
+        	errorDiv.remove();
+        	errorDiv = null;
+        	main.resizeResultView();
+        }, 3000);
     },
 
     /*
@@ -162,6 +172,7 @@ var main = {
     
     init: function() {
         // UI elements
+    	main.formUpload = $("#uploadForm");
         main.divOriginal = $("#original");
         main.divResult = $("#result");
         
@@ -177,7 +188,10 @@ var main = {
         
         main.canvasOriginal = document.createElement("canvas");
         main.divOriginal.get(0).appendChild(main.canvasOriginal);
-        main.formOptions = $("#optionsForm");
+        main.formOptions = $("#optionsForm").submit(function(e) {
+            e.preventDefault();
+            process.process();
+        });;
         main.inputRadius = $("#vectorRadius").keyup(main.vectorChanged);
         main.inputX = $("#vectorX").keyup(main.vectorChanged);
         main.inputY = $("#vectorY").keyup(main.vectorChanged);
@@ -198,9 +212,17 @@ var main = {
         
         $("#uploadResponse").load(main.processUpload);
         $("#original").delegate("canvas", "click", main.coordinates);
-        $("#optionsForm").submit(function(e) {
-            e.preventDefault();
-            process.process();
+
+        main.divAdvancedOptions = $("#advancedOptions");
+        main.inputAdvanced = $("#advanced").change(function(e) {
+        	if (main.inputAdvanced.is(":checked")) {
+        		main.divAdvancedOptions.show();
+        	} else {
+        		main.divAdvancedOptions.hide();
+        	}
+        	main.resizeResultView();
         });
+        
+        $(window).resize(main.resizeResultView);
     }
 };

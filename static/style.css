@@ -18,10 +18,22 @@ p {
 	margin: 4px 0;
 	padding: 0;
 }
+input.small {
+	width: 50px;
+}
+.error {
+	margin: 4px 0;
+	padding: 6px;
+	border: 1px solid #FF3300;
+	background: #FADFDC;
+	color: #FF3300;
+}
+/* upload form */
 #uploadForm {
 	padding: 6px;
 	background: #EBEBEB;
 }
+/* image processing options */
 #optionsForm {
 	display: none;
 	border: 1px solid #CCC;
@@ -38,10 +50,17 @@ p {
 	width: 25%;
 	border: 1px solid #CCC;
 }
-#optionsForm>div>p {
+#optionsForm>div p {
 	display: inline-block;
 	margin-right: 10px;
 }
+#advancedOptions {
+	display: none;
+}
+#stop {
+	display: none;
+}
+/* display images */
 #original, #result {
 	display: none;
 	border: 1px solid #CCC;
@@ -56,21 +75,13 @@ p {
 #result {
 	float: right;
 }
-#result>.loader {
+.loader {
 	width: 0%;
-	height: 40px;
+	height: 100%;
 	background-color: green;
 }
-input.small {
-	width: 50px;
-}
-.error {
-	margin: 4px 0;
-	padding: 6px;
-	border: 1px solid #FF3300;
-	background: #FADFDC;
-	color: #FF3300;
-}
-#stop {
-	display: none;
+.variableSelect {
+	width: 50%;
+	height: 50%;
+	float: left;
 }

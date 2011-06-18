@@ -144,6 +144,7 @@ func staticHandler(w http.ResponseWriter, r *http.Request) {
  */
 func clientHandler(ws *websocket.Conn) {
     defer func() {
+    	log.Println("Client handler closed.")
         ws.Close()
     }()
 
@@ -173,6 +174,8 @@ func clientHandler(ws *websocket.Conn) {
 func hub() {
     for {
         work := <-workChan
+        
+        log.Println("Work started.");
 
 		work.conn.Write([]byte("0.01"))
 
@@ -187,7 +190,8 @@ func hub() {
 		}
 
 		work.conn.Write(response)
-		work.conn.Close()
+		log.Println("Work finished.");
+		//work.conn.Close()
     }
 }
 

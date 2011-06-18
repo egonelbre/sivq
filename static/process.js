@@ -8,10 +8,7 @@ var process = {
 	 */
 	connection: null,
 	
-	/*
-	 * Loader bar
-	 */
-	divLoader: null,
+	advanced: false,
 
 	/*
 	 * Process image
@@ -27,12 +24,10 @@ var process = {
 			main.showError("Please fill in all fields.");
 			return;
 		}
-		main.hideError();
 
-		// UI
+		// prepare UI
 		main.buttonSIVQ.attr("disabled", "disabled");
 		main.buttonStop.show();
-		main.divResult.show();
 
 		process.connection = new WebSocket("ws://localhost:8080/process");
 		if (!process.connection) {
@@ -43,22 +38,40 @@ var process = {
 		process.connection.onclose = function(e) {
 	    	console.log("Connection closed.");
 	    	process.connection = null;
-	    	
-	    	main.buttonSIVQ.removeAttr("disabled");
-			main.buttonStop.hide();
 	    };
-
 	    process.connection.onmessage = process.serverMessage;
-		
+
+	    process.advanced = main.inputAdvanced.is(":checked");
+	    if (process.advanced) {
+	    	process.advancedProcess(input);
+	    } else {
+	    	process.multiStepProcess(input);
+	    }
+	},
+	
+	advancedProcess: function(input) {
+		main.divResult.html('<div class="loader"></div>');
+
 		// send image for processing
 	    process.connection.onopen = function() {
 			process.connection.send(JSON.stringify(input));
-		}
+		};
+	},
 
-	    // loader
-	    process.divLoader = $(document.createElement("div")).addClass("loader");
-	    main.divResult.empty()
-	    	.append(process.divLoader);
+	multiStepProcess: function(input) {
+		main.divResult.empty();
+
+		var n = 4;
+		var imageHeight = main.divResult.innerHeight() / 2;
+		var i, divImage;
+		for (i = 0; i < 4; i++) {
+			divImage = $(document.createElement("div")).addClass("variableSelect").height(imageHeight)
+							.appendTo(main.divResult);
+			$(document.createElement("div")).addClass("loader").width(i +"%")
+				.appendTo(divImage);
+		}
+		
+		process.closeConnection();
 	},
 
 	/*
@@ -74,9 +87,14 @@ var process = {
 		} else if (data.length > 6) {
 			// image ready
 			main.divResult.html('<img src="data:image/png;base64,'+ data +'" alt="" />');
+			process.closeConnection();
 		} else {
 			// loader status
-			process.divLoader.width(parseInt(parseFloat(data) * 100) + "%");
+			if (process.advanced) {
+				main.divResult.children().first().width(parseInt(parseFloat(data) * 100) + "%");
+			} else {
+				// TODO: multi-step loader
+			}
 		}
 	},
 
@@ -88,6 +106,24 @@ var process = {
 			return;
 		}
 		process.connection.send("stop");
+		process.closeConnection();
+	},
+
+	/*
+	 * Close connection
+	 */
+	closeConnection: function() {
+		if (process.connection == null) {
+			return;
+		}
+
+		try {
+			process.connection.close();
+			process.connection = null;
+		} catch(e) {}
+
+		main.buttonSIVQ.removeAttr("disabled");
+		main.buttonStop.hide();
 	},
 	
 	/*
@@ -101,8 +137,6 @@ var process = {
 				|| input.image.length == 0 || input.vectorName.length == 0) {
 			main.showError("Could not save vector. Please make sure you have correctly selected vector.");
 			return;
-		} else {
-			main.hideError();
 		}
 
 		$.post("/saveVector", input, function(response) {
