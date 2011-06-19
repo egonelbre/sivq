@@ -23,6 +23,7 @@ var (
     matchStride = flag.Int("M", 1, "matching value stride (can be set to 3 for grayscale pictures)")
     matchOffset = flag.Int("O", 0, "matching offset")
     gammaAdj    = flag.Float64("g", 2.0, "gamma adjust")
+    averageBias = flag.Float64("b", 0.0, "average bias")
 )
 
 func main() {
@@ -66,6 +67,7 @@ func main() {
 
     sivqParams := SIVQParameters{
         GammaAdjustment: float(*gammaAdj),
+        AverageBias    : float(*averageBias),
         RotationStride:  float(*rotStride),
         MatchingStride:  *matchStride,
         MatchingOffset:  *matchOffset,

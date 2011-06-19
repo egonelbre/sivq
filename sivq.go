@@ -24,6 +24,7 @@ type RingVectorParameters struct {
 
 type SIVQParameters struct {
     GammaAdjustment float // for making images darker
+    AverageBias     float // for using average around instead of center
     RotationStride  float // for calculating all possible rotations
     MatchingStride  int   // for comparing less values
     MatchingOffset  int   // for using different colors as comparison
@@ -190,39 +191,12 @@ func (A *RingVector) Diff(B *RingVector, p SIVQParameters) (best float) {
     return best
 }
 
-func highlightColor(p SIVQParameters, h float) image.RGBAColor {
-    h = 1.0 - h
-    // adjust gamma for clarity
-    h = float(math.Pow(float64(h), float64(p.GammaAdjustment)))
-    if h > 1.0 {
-        h = 1.0
-    } else if h < 0.0 {
-        h = 0.0
-    }
-    if h < p.Threshold {
-        return image.RGBAColor{0, 0, 0, 255}
-    }
-    c := uint8(h * 255.0)
-    return image.RGBAColor{c, c, c, 255}
-}
-
-
 func calculateSIVQ(p SIVQParameters, input *image.RGBA, output *FloatGray, rv *RingVector){
     startAtX := rv.MaxRadius
     startAtY := rv.MaxRadius
     stopAtX := output.Bounds().Dx() - rv.MaxRadius
     stopAtY := output.Bounds().Dy() - rv.MaxRadius
-
-    minStride := Tau
-    for _, r := range rv.Rings {
-        stride := Tau * float(r.Stride) / float(len(r.Data))
-        if minStride > stride {
-            minStride = stride
-        }
-    }
-    if p.RotationStride < minStride {
-        p.RotationStride = minStride
-    }
+    
     cancel := make(chan int)
     done := make(chan int)
 
@@ -257,22 +231,11 @@ func calculateSIVQ(p SIVQParameters, input *image.RGBA, output *FloatGray, rv *R
     }
 }
 
-func fixCircleDefects(p SIVQParameters, input *FloatGray, output *image.RGBA, rv *RingVector) {
+func fixCircleDefects(p SIVQParameters, input *FloatGray, output *FloatGray, rv *RingVector) {
     startAtX := rv.MaxRadius
     startAtY := rv.MaxRadius
     stopAtX := output.Bounds().Dx() - rv.MaxRadius
     stopAtY := output.Bounds().Dy() - rv.MaxRadius
-
-    minStride := Tau
-    for _, r := range rv.Rings {
-        stride := Tau * float(r.Stride) / float(len(r.Data))
-        if minStride > stride {
-            minStride = stride
-        }
-    }
-    if p.RotationStride < minStride {
-        p.RotationStride = minStride
-    }
 
     cancel := make(chan int)
     done := make(chan int)
@@ -285,7 +248,7 @@ func fixCircleDefects(p SIVQParameters, input *FloatGray, output *image.RGBA, rv
             r := rv.EmptyClone()
             for x := startAtX; x < stopAtX; x++ {
                 r.LoadDataGray(input, x, y)
-                output.Set(x, y, highlightColor(p, r.Average()))
+                output.Set(x, y, FloatGrayColor{ (p.AverageBias * r.Average()) + (1.0 - p.AverageBias) * input.At(x,y).(FloatGrayColor).Y  } )
             }
             done <- y
         }(y)
@@ -293,8 +256,8 @@ func fixCircleDefects(p SIVQParameters, input *FloatGray, output *image.RGBA, rv
     
     for i := 0; i < routineCount; i++ {
         select {
-        case y := <-done:
-            p.ProgressCallback(float(y-startAtY) / float(stopAtY-startAtY-1))
+        case _ = <-done:
+            //p.ProgressCallback(float(y-startAtY) / float(stopAtY-startAtY-1))
         case <-p.StopCh:
             for j := i; j < routineCount; j++ {
                 cancel <- 1
@@ -311,6 +274,23 @@ func SIVQ(p SIVQParameters, input *image.RGBA, rv *RingVector) *image.RGBA {
         p.StopCh = make(chan bool)
     }
     
+    minStride := Tau
+    for _, r := range rv.Rings {
+        stride := Tau * float(r.Stride) / float(len(r.Data))
+        if minStride > stride {
+            minStride = stride
+        }
+    }
+    if p.RotationStride < minStride {
+        p.RotationStride = minStride
+    }
+    
+    if p.AverageBias > 1.0 {
+        p.AverageBias = 1.0
+    } else if p.AverageBias < 0.0 {
+        p.AverageBias = 0.0
+    }
+    
     dx := input.Bounds().Dx()
     dy := input.Bounds().Dy()
     
@@ -319,8 +299,13 @@ func SIVQ(p SIVQParameters, input *image.RGBA, rv *RingVector) *image.RGBA {
         temp.Pix[i] = FloatGrayColor{0.0}
     }
     calculateSIVQ(p, input, temp, rv)
-    //output := image.NewRGBA(dx, dy)
-    //fixCircleDefects(p, temp, output, rv)
+    var output * FloatGray
+    if p.AverageBias >= 0.001 {
+        output = NewFloatGray(dx, dy)
+        fixCircleDefects(p, temp, output, rv)
+    } else {
+        output = temp
+    }
     
-    return temp.ToRGBA(p.GammaAdjustment, p.Threshold)
+    return output.ToRGBA(p.GammaAdjustment, p.Threshold)
 }
