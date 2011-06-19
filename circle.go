@@ -17,25 +17,30 @@ type Circle interface {
 
 type SamplingFunc func(x int, y int, idx int)
 
-func SamplingRing(size int, t int, f SamplingFunc) {
+func SamplingRing(size int, count int, f SamplingFunc) {
     var x, y, d int
-    var t4, t3, t2 int
+    var sec4, sec3, sec2, sec1 int
     x = 0
     y = size
     d = 3 - 2*size
-    t2 = t / 2
-    t3 = t * 3 / 4
-    t4 = t / 4
+    
+    sec1 = count/4;
+    sec2 = 2*sec1;
+    sec3 = 3*sec1;
+    sec4 = 4*sec1;
+    
     for x <= y {
-        f(x, y, x)        // x
-        f(y, x, t4-x-1)   // total / 4 - x
-        f(-y, x, t4+x)    // total / 4 + x
-        f(x, -y, t2-x-1)  // total / 2 - x
-        f(-x, -y, t2+x)   // total / 2 + x
-        f(-y, -x, t3-x-1) // total 3 / 4 - x
-        f(y, -x, t3+x)    // total 3 / 4 + x
-        f(-x, y, t-x-1)   // total - x
-
+        f(x, y, x)
+        if x != 0 { f(-x,  y, sec4 - x) }
+        if y != 0 { f( x, -y, sec2 - x) }
+        if (x != 0) && (y != 0) { f(-x, -y, sec2 + x) }
+        if x != y {
+            f(y, x, sec1 - x)
+            if  x != 0 { f( y, -x, sec1 + x) }
+            if  y != 0 { f(-y,  x, sec3 + x) }
+            if  (x != 0) && (y != 0) { f(-y, -x, sec3 - x) }
+        }
+        
         if d <= 0 {
             d += 4*x + 6
         } else {
@@ -91,14 +96,10 @@ func (b *Bresenham) GetPixelCount(radius int) int {
 
 func (b *Bresenham) Run(size int, f SamplingFunc) {
     pxls, count := b.GetRing(size)
-    for i := 0; i < count; i += 8 {
+    for i := 0; i < count; i += 4 {
         f((*pxls)[i].X, (*pxls)[i].Y, i)
         f((*pxls)[i+1].X, (*pxls)[i+1].Y, i+1)
         f((*pxls)[i+2].X, (*pxls)[i+2].Y, i+2)
         f((*pxls)[i+3].X, (*pxls)[i+3].Y, i+3)
-        f((*pxls)[i+4].X, (*pxls)[i+4].Y, i+4)
-        f((*pxls)[i+5].X, (*pxls)[i+5].Y, i+5)
-        f((*pxls)[i+6].X, (*pxls)[i+6].Y, i+6)
-        f((*pxls)[i+7].X, (*pxls)[i+7].Y, i+7)
     }
 }

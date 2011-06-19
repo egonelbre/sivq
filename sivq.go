@@ -64,6 +64,18 @@ func (r *RingVectorRing) LoadData(input *image.RGBA, X int, Y int) {
     })
 }
 
+
+func (r *RingVectorRing) LoadDataGray(input *FloatGray, X int, Y int) {
+    inputStride := (*input).Stride
+    circle.Run(r.Radius, func(x int, y int, idx int) {
+        pixel := (*input).Pix[(Y+y)*inputStride+(X+x)]
+        i := idx * r.Stride
+        r.Data[i] = float(pixel.Y)
+        r.Data[i+1] = float(pixel.Y)
+        r.Data[i+2] = float(pixel.Y)
+    })
+}
+
 func NewRingVector(rvp RingVectorParameters) *RingVector {
     rv := RingVector{}
     rv.Rings = make([]RingVectorRing, rvp.Count)
@@ -96,6 +108,26 @@ func (rv *RingVector) LoadData(input *image.RGBA, X int, Y int) {
     for _, r := range rv.Rings {
         r.LoadData(input, X, Y)
     }
+}
+
+func (rv *RingVector) LoadDataGray(input *FloatGray, X int, Y int) {
+    for _, r := range rv.Rings {
+        r.LoadDataGray(input, X, Y)
+    }
+}
+
+func (rv *RingVector) Average() float {
+    var avg float
+    avg = 0.0
+    count := 0
+    for _, r := range rv.Rings {
+        for _, val := range r.Data {
+           count += 1
+           avg += val
+        }
+    }
+    avg = avg / float(count)
+    return avg
 }
 
 type RingDiff struct {
@@ -158,7 +190,7 @@ func (A *RingVector) Diff(B *RingVector, p SIVQParameters) (best float) {
     return best
 }
 
-func highlightColor(p SIVQParameters, a image.RGBAColor, h float) image.RGBAColor {
+func highlightColor(p SIVQParameters, h float) image.RGBAColor {
     h = 1.0 - h
     // adjust gamma for clarity
     h = float(math.Pow(float64(h), float64(p.GammaAdjustment)))
@@ -174,7 +206,58 @@ func highlightColor(p SIVQParameters, a image.RGBAColor, h float) image.RGBAColo
     return image.RGBAColor{c, c, c, 255}
 }
 
-func makeHeatMap(p SIVQParameters, input *image.RGBA, output *image.RGBA, rv *RingVector) {
+
+func calculateSIVQ(p SIVQParameters, input *image.RGBA, output *FloatGray, rv *RingVector){
+    startAtX := rv.MaxRadius
+    startAtY := rv.MaxRadius
+    stopAtX := output.Bounds().Dx() - rv.MaxRadius
+    stopAtY := output.Bounds().Dy() - rv.MaxRadius
+
+    minStride := Tau
+    for _, r := range rv.Rings {
+        stride := Tau * float(r.Stride) / float(len(r.Data))
+        if minStride > stride {
+            minStride = stride
+        }
+    }
+    if p.RotationStride < minStride {
+        p.RotationStride = minStride
+    }
+    cancel := make(chan int)
+    done := make(chan int)
+
+    routineCount := 0
+
+    for y := startAtY; y < stopAtY; y++ {
+        routineCount += 1
+        go func(y int) {
+            r := rv.EmptyClone()
+            for x := startAtX; x < stopAtX; x++ {
+                r.LoadData(input, x, y)
+                output.Set(x, y, FloatGrayColor{rv.Diff(r, p)})
+                select {
+                case <-cancel:
+                    break
+                default:
+                }
+            }
+            done <- y
+        }(y)
+    }
+    
+    for i := 0; i < routineCount; i++ {
+        select {
+        case y := <-done:
+            p.ProgressCallback(float(y-startAtY) / float(stopAtY-startAtY-1))
+        case <-p.StopCh:
+            for j := i; j < routineCount; j++ {
+                cancel <- 1
+            }
+        }
+    }
+}
+
+func fixCircleDefects(p SIVQParameters, input *FloatGray, output *image.RGBA, rv *RingVector) {
     startAtX := rv.MaxRadius
     startAtY := rv.MaxRadius
     stopAtX := output.Bounds().Dx() - rv.MaxRadius
@@ -201,19 +284,13 @@ func makeHeatMap(p SIVQParameters, input *image.RGBA, output *image.RGBA, rv *Ri
         go func(y int) {
             r := rv.EmptyClone()
             for x := startAtX; x < stopAtX; x++ {
-                r.LoadData(input, x, y)
-                c := (*input).At(x, y).(image.RGBAColor)
-                output.Set(x, y, highlightColor(p, c, rv.Diff(r, p)))
-                select {
-                case <-cancel:
-                    break
-                default:
-                }
+                r.LoadDataGray(input, x, y)
+                output.Set(x, y, highlightColor(p, r.Average()))
             }
             done <- y
         }(y)
     }
-
+    
     for i := 0; i < routineCount; i++ {
         select {
         case y := <-done:
@@ -236,10 +313,14 @@ func SIVQ(p SIVQParameters, input *image.RGBA, rv *RingVector) *image.RGBA {
     
     dx := input.Bounds().Dx()
     dy := input.Bounds().Dy()
-    output := image.NewRGBA(dx, dy)
-    for i := range output.Pix {
-        output.Pix[i] = image.RGBAColor{0, 0, 0, 255}
+    
+    temp := NewFloatGray(dx, dy)
+    for i := range temp.Pix {
+        temp.Pix[i] = FloatGrayColor{0.0}
     }
-    makeHeatMap(p, input, output, rv)
-    return output
+    calculateSIVQ(p, input, temp, rv)
+    //output := image.NewRGBA(dx, dy)
+    //fixCircleDefects(p, temp, output, rv)
+    
+    return temp.ToRGBA(p.GammaAdjustment, p.Threshold)
 }

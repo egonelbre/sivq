@@ -8,6 +8,7 @@ TARG=server
 
 GOFILES=\
     circle.go \
+    image.go \
     sivq.go \
     utils.go \
     server.go
