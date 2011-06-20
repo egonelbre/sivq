@@ -51,6 +51,7 @@ type ProcessInput struct {
     MatchStride    int
     MatchingOffset int
     GammaAdjust    float64
+    AverageBias    float64
 }
 
 type Work struct {
@@ -295,6 +296,7 @@ func process(input *ProcessInput, conn *websocket.Conn, stopCh chan bool) os.Err
 
     sivqParams := SIVQParameters{
         GammaAdjustment: float(input.GammaAdjust),
+        AverageBias:     float(input.AverageBias),
         RotationStride:  float(input.RotationStride),
         MatchingStride:  input.MatchStride,
         MatchingOffset:  input.MatchingOffset,
