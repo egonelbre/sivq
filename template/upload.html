@@ -27,9 +27,25 @@
             <p>gamma adjust: <input id="gammaAdjust" type="text" class="small" value="2.0" /></p>
             <div>Advanced <input type="checkbox" id="advanced" /></div>
             <div id="advancedOptions">
-                <p>rotation&nbsp;stride:&nbsp;<input id="rotationStride" type="text" class="small" value="0.001" /></p>
-                <p>matching&nbsp;value&nbsp;stride&nbsp;(3&nbsp;for&nbsp;grayscale):&nbsp;<input id="matchStride" type="text" class="small" value="1" /></p>
-                <p>matching&nbsp;offset:&nbsp;<input id="matchingOffset" type="text" class="small" value="0" /></p>
+                <p>
+                	rotation stride: <input id="rotationStride" type="text" class="small" value="0.001" />
+                	<select><option>0.001</option><option>0.01</option><option>0.1</option></select>
+                </p>
+                <p>
+                	matching value stride (can be 3 for grayscale):
+                	<input id="matchStride" type="text" class="small" value="1" />
+                	<select><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+                </p>
+                <p>
+                	matching offset:
+                	<input id="matchingOffset" type="text" class="small" value="0" />
+                	<select><option>0</option><option>1</option><option>2</option><option>3</option></select>
+                </p>
+                <p>
+                	average bias:
+                	<input id="averageBias" type="text" class="small" value="0.0" />
+                	<select><option>0.0</option><option>0.1</option><option>0.2</option><option>0.3</option></select>
+                </p>
             </div>
             <div>
                 <input type="submit" id="sivq" value="SIVQ" />

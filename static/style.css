@@ -57,6 +57,9 @@ input.small {
 #advancedOptions {
 	display: none;
 }
+#advancedOptions select {
+	display: none;
+}
 #stop {
 	display: none;
 }
@@ -81,7 +84,10 @@ input.small {
 	background-color: green;
 }
 .variableSelect {
-	width: 50%;
-	height: 50%;
+	border: 1px solid #000;
 	float: left;
+	overflow: hidden;
+	text-align: center;
+	margin-right: -1px;
+	margin-bottom: -1px;
 }

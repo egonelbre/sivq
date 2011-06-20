@@ -7,8 +7,16 @@ var process = {
 	 * Web Socket connection
 	 */
 	connection: null,
-	
+
 	advanced: false,
+
+	input: {},
+
+	tryParameters: [],
+	tryValues: [],
+
+	currentParameter: "",
+	currentValue: 0,
 
 	/*
 	 * Process image
@@ -24,6 +32,7 @@ var process = {
 			main.showError("Please fill in all fields.");
 			return;
 		}
+		process.input = input;
 
 		// prepare UI
 		main.buttonSIVQ.attr("disabled", "disabled");
@@ -42,36 +51,98 @@ var process = {
 	    process.connection.onmessage = process.serverMessage;
 
 	    process.advanced = main.inputAdvanced.is(":checked");
-	    if (process.advanced) {
-	    	process.advancedProcess(input);
-	    } else {
-	    	process.multiStepProcess(input);
-	    }
+	    process.connection.onopen = function() {
+	    	if (process.advanced) {
+		    	process.advancedProcess();
+		    } else {
+		    	process.multiStepProcess();
+		    }
+		};
 	},
 	
-	advancedProcess: function(input) {
+	advancedProcess: function() {
 		main.divResult.html('<div class="loader"></div>');
 
 		// send image for processing
-	    process.connection.onopen = function() {
-			process.connection.send(JSON.stringify(input));
-		};
+		process.connection.send(JSON.stringify(process.input));
 	},
 
-	multiStepProcess: function(input) {
-		main.divResult.empty();
+	multiStepProcess: function() {
+		// parameters to try
+		process.tryParameters = [];
+		main.divAdvancedOptions.find("input:text").each(function() {
+			process.tryParameters.push($(this).attr("id"));
+		});
+		console.log(process.tryParameters);
 
-		var n = 4;
-		var imageHeight = main.divResult.innerHeight() / 2;
+		process.nextParameter();
+	},
+	
+	nextParameter: function() {
+		process.currentParameter = process.tryParameters.shift();
+
+		// get values to try
+		process.tryValues = [];
+		$("#"+ process.currentParameter).next("select").children("option").each(function() {
+			process.tryValues.push(parseFloat($(this).html()));
+		});
+
+		// loaders for images
+		main.divResult.empty();
+		var n = process.tryValues.length;
+		var nSqrt = Math.sqrt(n);
+		var rows = Math.round(nSqrt);
+		var columns = (nSqrt == rows || Math.floor(nSqrt) != rows) ? rows : rows + 1;
+		var imageWidth = (main.divResult.innerWidth() - 16) / columns - 1;
+		var imageHeight = (main.divResult.innerHeight() - 16) / rows - 1;
 		var i, divImage;
-		for (i = 0; i < 4; i++) {
-			divImage = $(document.createElement("div")).addClass("variableSelect").height(imageHeight)
+		for (i = 0; i < n; i++) {
+			divImage = $(document.createElement("div")).addClass("variableSelect").width(imageWidth).height(imageHeight)
 							.appendTo(main.divResult);
-			$(document.createElement("div")).addClass("loader").width(i +"%")
+			$(document.createElement("div")).addClass("loader").width(0)
 				.appendTo(divImage);
 		}
+
+		process.nextValue(null);
+	},
+	
+	nextValue: function(data) {
+		if (data != null) {
+			main.divResult.find(".loader:first").parent().data("value", process.currentValue)
+				.html('<img src="data:image/png;base64,'+ data +'" alt="" />');
+		}
+
+		if (process.tryValues.length == 0) {
+			console.log(process.currentParameter + " done.");
+			main.divResult.children(".variableSelect").css("cursor", "pointer")
+				.click(function(e) { process.selectBest($(this)); });
+			return;
+		}
+
+		// send new processing request
+		var newInput = jQuery.extend({}, process.input);
+		process.currentValue = process.tryValues.shift();
+		newInput[process.currentParameter] = process.currentValue;
+		console.log(process.currentParameter +" = "+ process.currentValue);
+
+		// send image for processing
+		process.connection.send(JSON.stringify(newInput));
+	},
+	
+	selectBest: function(choice) {
+		// update process input
+		process.input[process.currentParameter] = choice.data("value");
 		
-		process.closeConnection();
+		// all done
+		if (process.tryParameters.length == 0) {
+			var finalImage = choice.children("img:first");
+			main.divResult.empty().append(finalImage);
+
+			process.closeConnection();
+			return;
+		}
+
+		process.nextParameter();
 	},
 
 	/*
@@ -86,15 +157,15 @@ var process = {
 			main.divResult.html(data.Message);
 		} else if (data.length > 6) {
 			// image ready
-			main.divResult.html('<img src="data:image/png;base64,'+ data +'" alt="" />');
-			process.closeConnection();
+			if (process.advanced) {
+				main.divResult.html('<img src="data:image/png;base64,'+ data +'" alt="" />');
+				process.closeConnection();
+			} else {
+				process.nextValue(data);
+			}
 		} else {
 			// loader status
-			if (process.advanced) {
-				main.divResult.children().first().width(parseInt(parseFloat(data) * 100) + "%");
-			} else {
-				// TODO: multi-step loader
-			}
+			main.divResult.find(".loader:first").width(parseInt(parseFloat(data) * 100) + "%");
 		}
 	},
 
@@ -107,12 +178,14 @@ var process = {
 		}
 		process.connection.send("stop");
 		process.closeConnection();
+		$("div.variableSelect").unbind("click").css("cursor", "");
 	},
 
 	/*
 	 * Close connection
 	 */
 	closeConnection: function() {
+		console.log("Closing connection.");
 		if (process.connection == null) {
 			return;
 		}
@@ -147,7 +220,6 @@ var process = {
 			main.selectVector.append('<option value="'+ input.vectorName +'">'+ input.vectorName +'</option>');
 			main.selectVector.val(input.vectorName);
 			main.inputNewVectorName.val("");
-			console.log(response);
 		}, "json");
 	},
 
@@ -167,7 +239,8 @@ var process = {
 			rotationStride: parseFloat($("#rotationStride").val()),
 			matchStride: parseInt($("#matchStride").val()),
 			matchingOffset: parseInt($("#matchingOffset").val()),
-			gammaAdjust: parseFloat($("#gammaAdjust").val())
+			gammaAdjust: parseFloat($("#gammaAdjust").val()),
+			averageBias: parseFloat($("#averageBias").val())
 		};
 
 		// remove NaNs
