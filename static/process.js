@@ -113,7 +113,11 @@ var process = {
 		}
 
 		if (process.tryValues.length == 0) {
-			console.log(process.currentParameter + " done.");
+			// show choose message
+			main.divChooseBest.find("span:first").html($.trim($("#"+ process.currentParameter).parent().text().split(":")[0]));
+			main.divChooseBest.show().css("right", (main.divResult.width() - main.divChooseBest.width()) / 2);
+			
+
 			main.divResult.children(".variableSelect").css("cursor", "pointer")
 				.click(function(e) { process.selectBest($(this)); });
 			return;
@@ -130,6 +134,8 @@ var process = {
 	},
 	
 	selectBest: function(choice) {
+		main.divChooseBest.hide();
+
 		// update process input
 		process.input[process.currentParameter] = choice.data("value");
 		
@@ -178,7 +184,9 @@ var process = {
 		}
 		process.connection.send("stop");
 		process.closeConnection();
+
 		$("div.variableSelect").unbind("click").css("cursor", "");
+		main.divChooseBest.hide();
 	},
 
 	/*

@@ -22,6 +22,7 @@ var main = {
     selectVector: null,
     inputAdvanced: null,
     divAdvancedOptions: null,
+    divChooseBest: null,
     
     /*
      * Original image
@@ -175,6 +176,7 @@ var main = {
     	main.formUpload = $("#uploadForm");
         main.divOriginal = $("#original");
         main.divResult = $("#result");
+        main.divChooseBest = $("#chooseBest");
         
         main.divOriginal.scroll(function(e){
             main.divResult.scrollLeft(main.divOriginal.scrollLeft());

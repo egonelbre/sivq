@@ -64,6 +64,9 @@ input.small {
 	display: none;
 }
 /* display images */
+#images {
+	position: relative;
+}
 #original, #result {
 	display: none;
 	border: 1px solid #CCC;
@@ -74,6 +77,18 @@ input.small {
     float: left;
     width: 49%;
     overflow: scroll;
+}
+#chooseBest {
+	display: none;
+	padding: 6px;
+	position: absolute;
+	top: -10px;
+	right: 100px;
+	color: #FFF;
+	background: #000;
+}
+#chooseBest span {
+	font-weight: bold;
 }
 #result {
 	float: right;
