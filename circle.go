@@ -1,7 +1,6 @@
 package main
 
 import (
-    "image"
     "math"
 )
 
@@ -13,6 +12,7 @@ const (
 type Circle interface {
     Run(size int, f SamplingFunc)
     GetPixelCount(size int) int
+    GetRing(radius int) (*LocationArray, int)
 }
 
 type SamplingFunc func(x int, y int, idx int)
@@ -51,7 +51,12 @@ func SamplingRing(size int, count int, f SamplingFunc) {
     }
 }
 
-type LocationArray []image.Point
+type Point struct {
+    X int
+    Y int
+}
+
+type LocationArray []Point
 type IntLocationArrayMap map[int]LocationArray
 
 type Bresenham struct {
@@ -71,7 +76,7 @@ func (b *Bresenham) CalculateRing(radius int) {
     arr := make(LocationArray, pxls)
     SamplingRing(radius, pxls,
         func(x int, y int, idx int) {
-            arr[idx] = image.Point{x, y}
+            arr[idx] = Point{x, y}
         })
     b.Pixels[radius] = arr
 }

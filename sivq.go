@@ -56,13 +56,17 @@ func NewRing(radius int) *RingVectorRing {
 
 func (r *RingVectorRing) LoadData(input *image.RGBA, X int, Y int) {
     inputStride := (*input).Stride
-    circle.Run(r.Radius, func(x int, y int, idx int) {
+    pxls, count := circle.GetRing(r.Radius)
+    i2 := 0
+    for i := 0; i < count; i += 1 {
+        x := (*pxls)[i].X
+        y := (*pxls)[i].Y
         pixel := (*input).Pix[(Y+y)*inputStride+(X+x)]
-        i := idx * r.Stride
-        r.Data[i+0] = float(pixel.R) / 255.0
-        r.Data[i+1] = float(pixel.G) / 255.0
-        r.Data[i+2] = float(pixel.B) / 255.0
-    })
+        r.Data[i2+0] = float(pixel.R) / 255.0
+        r.Data[i2+1] = float(pixel.G) / 255.0
+        r.Data[i2+2] = float(pixel.B) / 255.0
+        i2 += r.Stride
+    }
 }
 
 
