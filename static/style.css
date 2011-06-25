@@ -54,12 +54,6 @@ input.small {
 	display: inline-block;
 	margin-right: 10px;
 }
-#advancedOptions {
-	display: none;
-}
-#advancedOptions select {
-	display: none;
-}
 #stop {
 	display: none;
 }

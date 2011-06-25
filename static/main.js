@@ -2,7 +2,7 @@
  * Main JavaScript file for Spatially Invariant Vector Quantization
  */
 var main = {
-    
+
     /*
      * UI elements
      */
@@ -11,12 +11,13 @@ var main = {
     divResult: null,
     formOptions: null,
     formUpload: null,
-    inputRadius: null,
+    inputVectorRadius: null,
     inputX: null,
     inputY: null,
     inputImageName: null,
     buttonStop: null,
     buttonSIVQ: null,
+    buttonAdjustParameters: null,
     inputNewVectorName: null,
     buttonSaveNewVector: null,
     selectVector: null,
@@ -141,7 +142,7 @@ var main = {
         // input
         var x = parseInt(main.inputX.val());
         var y = parseInt(main.inputY.val());
-        var r = parseInt(main.inputRadius.val());
+        var r = parseInt(main.inputVectorRadius.val());
         if ((x < 0 || y < 0 || r <= 0) && !clear) {
             return;
         }
@@ -192,9 +193,9 @@ var main = {
         main.divOriginal.get(0).appendChild(main.canvasOriginal);
         main.formOptions = $("#optionsForm").submit(function(e) {
             e.preventDefault();
-            process.process();
-        });;
-        main.inputRadius = $("#vectorRadius").keyup(main.vectorChanged);
+            process.process(false);
+        });
+        main.inputVectorRadius = $("#vectorRadius").keyup(main.vectorChanged);
         main.inputX = $("#vectorX").keyup(main.vectorChanged);
         main.inputY = $("#vectorY").keyup(main.vectorChanged);
         main.inputImageName = $("#imageName");
@@ -202,6 +203,11 @@ var main = {
         main.buttonStop = $("#stop").click(function(e) {
             process.stop();
             return false;
+        });
+        main.buttonAdjustParameters = $("#adjustParameters").click(function(e) {
+        	e.preventDefault();
+        	e.stopPropagation();
+        	process.process(true);
         });
         main.inputNewVectorName = $("#newVectorName");
         main.buttonSaveNewVector = $("#saveNewVector").click(function(e) {
@@ -214,16 +220,6 @@ var main = {
         
         $("#uploadResponse").load(main.processUpload);
         $("#original").delegate("canvas", "click", main.coordinates);
-
-        main.divAdvancedOptions = $("#advancedOptions");
-        main.inputAdvanced = $("#advanced").change(function(e) {
-        	if (main.inputAdvanced.is(":checked")) {
-        		main.divAdvancedOptions.show();
-        	} else {
-        		main.divAdvancedOptions.hide();
-        	}
-        	main.resizeResultView();
-        });
         
         $(window).resize(main.resizeResultView);
     }

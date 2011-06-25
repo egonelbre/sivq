@@ -43,7 +43,7 @@ type ProcessInput struct {
     VectorName     string
     VecX           int
     VecY           int
-    Radius         int
+    VectorRadius   int
     VectorRings    int
     RingSizeInc    int
     Threshold      float64
@@ -311,7 +311,7 @@ func process(input *ProcessInput, conn *websocket.Conn, stopCh chan bool) os.Err
     var ringVector *RingVector
     if len(input.VectorName) == 0 {
         vectorParams := RingVectorParameters{
-            Radius:    input.Radius,
+            Radius:    input.VectorRadius,
             Count:     input.VectorRings,
             RadiusInc: input.RingSizeInc}
         log.Println(vectorParams)
@@ -349,7 +349,7 @@ func process(input *ProcessInput, conn *websocket.Conn, stopCh chan bool) os.Err
 func saveVectorHandler(w http.ResponseWriter, r *http.Request) {
     vectorName := r.FormValue("vectorName")
     imageName := r.FormValue("image")
-    radius, err := strconv.Atoi(r.FormValue("radius"))
+    radius, err := strconv.Atoi(r.FormValue("vectorRadius"))
     checkError(err)
     vectorRings, err := strconv.Atoi(r.FormValue("vectorRings"))
     checkError(err)
