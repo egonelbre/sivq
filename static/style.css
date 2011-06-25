@@ -76,7 +76,7 @@ input.small {
 	display: none;
 	padding: 6px;
 	position: absolute;
-	top: -10px;
+	top: -20px;
 	right: 100px;
 	color: #FFF;
 	background: #000;
@@ -99,4 +99,16 @@ input.small {
 	text-align: center;
 	margin-right: -1px;
 	margin-bottom: -1px;
+	position: relative;
+}
+.variableSelect>p {
+	padding: 6px;
+	margin: 0;
+	position: absolute;
+	top: 0;
+	left: 0;
+	color: #FFF;
+	background: #000;
+	font-weight: bold;
+	opacity: 0.8;
 }

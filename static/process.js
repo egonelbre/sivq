@@ -149,6 +149,17 @@ var process = {
 		for (i in process.parameters) {
 			process.tryParameters.push(i);
 		}
+		
+		// when using previously saved vector we skip vector parameters
+		if (process.input.vectorName != "") {
+			for (i in process.parameters) {
+				process.tryParameters.shift();
+				if (i == "vectorRings") {
+					break;
+				}
+			}
+		}
+
 		console.log(process.tryParameters);
 
 		process.nextParameter();
@@ -195,7 +206,7 @@ var process = {
 	nextValue: function(data) {
 		if (data != null) {
 			main.divResult.find(".loader:first").parent().data("value", process.currentValue)
-				.html('<img src="data:image/png;base64,'+ data +'" alt="" />');
+				.html('<img src="data:image/png;base64,'+ data +'" alt="" /><p>'+ process.currentValue +'</p>');
 		}
 
 		if (process.tryValues.length == 0) {
@@ -226,6 +237,9 @@ var process = {
 		// update process input
 		process.input[process.currentParameter] = choice.data("value");
 		$("#"+ process.currentParameter).val(choice.data("value"));
+		if (process.currentParameter == "vectorRadius") {
+			main.vectorChanged();
+		}
 		
 		// all done
 		if (process.tryParameters.length == 0) {
