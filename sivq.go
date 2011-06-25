@@ -140,7 +140,7 @@ type RingDiff struct {
 func (A *RingVector) Diff(B *RingVector, p SIVQParameters) (best float) {
     best = float(math.Inf(1))
 
-    cache := make(map[int]*RingDiff)
+    cache := make([]*RingDiff, len(A.Rings))
     for ri := range A.Rings {
         cache[ri] = &RingDiff{Base: -1}
     }
@@ -149,11 +149,11 @@ func (A *RingVector) Diff(B *RingVector, p SIVQParameters) (best float) {
         total := float(0.0)
         totalCount := 0
         for ri := range A.Rings {
-            dA := &A.Rings[ri].Data
-            dB := &B.Rings[ri].Data
+            dA := A.Rings[ri].Data
+            dB := B.Rings[ri].Data
 
             stride := A.Rings[ri].Stride
-            dataCount := len(*dA)
+            dataCount := len(dA)
 
             diff := float(0.0)
             diffCount := 0
@@ -161,12 +161,17 @@ func (A *RingVector) Diff(B *RingVector, p SIVQParameters) (best float) {
             base := int((rotation / Tau) * float(dataCount))
             base = base - base%stride
 
-            cacheVal, _ := cache[ri]
+            cacheVal := cache[ri]
             if cacheVal.Base != base {
+                i2 := (base + p.MatchingOffset) % dataCount
                 for i := p.MatchingOffset; i < dataCount; i += p.MatchingStride {
-                    d := (*dA)[i] - (*dB)[(base+i)%dataCount]
+                    d := dA[i] - dB[i2]
                     diff += d * d
                     diffCount += 1
+                    i2 += p.MatchingStride
+                    if i2 >= dataCount {
+                        i2 = i2 % dataCount
+                    }
                 }
                 cacheVal.Base = base
                 cacheVal.Diff = diff
@@ -248,7 +253,9 @@ func fixCircleDefects(p SIVQParameters, input *FloatGray, output *FloatGray, rv 
             r := rv.EmptyClone()
             for x := startAtX; x < stopAtX; x++ {
                 r.LoadDataGray(input, x, y)
-                output.Set(x, y, FloatGrayColor{ (p.AverageBias * r.Average()) + (1.0 - p.AverageBias) * input.At(x,y).(FloatGrayColor).Y  } )
+                inY := input.At(x,y).(FloatGrayColor).Y
+                output.Set(x, y, 
+                    FloatGrayColor{ (p.AverageBias * r.Average()) + (1.0 - p.AverageBias) * inY } )
             }
             done <- y
         }(y)
