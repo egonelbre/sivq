@@ -192,7 +192,6 @@ func hub() {
 
 		work.conn.Write(response)
 		log.Println("Work finished.");
-		//work.conn.Close()
     }
 }
 
@@ -305,7 +304,6 @@ func process(input *ProcessInput, conn *websocket.Conn, stopCh chan bool) os.Err
             conn.Write([]byte(strconv.Ftoa32(float32(p), 'f', 4)))
         },
         StopCh: stopCh}
-	log.Println(sivqParams);
 
     // get vector
     var ringVector *RingVector
@@ -314,7 +312,6 @@ func process(input *ProcessInput, conn *websocket.Conn, stopCh chan bool) os.Err
             Radius:    input.VectorRadius,
             Count:     input.VectorRings,
             RadiusInc: input.RingSizeInc}
-        log.Println(vectorParams)
 
         ringVector = NewRingVector(vectorParams)
         ringVector.LoadData(rgbaInput, input.VecX, input.VecY)
@@ -332,7 +329,6 @@ func process(input *ProcessInput, conn *websocket.Conn, stopCh chan bool) os.Err
             return err
         }
     }
-    log.Println(ringVector)
 
     // do the magic
     outputImage := SIVQ(sivqParams, rgbaInput, ringVector)

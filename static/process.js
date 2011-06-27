@@ -121,8 +121,9 @@ var process = {
 		}
 
 		process.connection.onclose = function(e) {
-	    	console.log("Connection closed.");
-	    	process.connection = null;
+			main.buttonSIVQ.removeAttr("disabled");
+			main.buttonAdjustParameters.removeAttr("disabled");
+			main.buttonStop.hide();
 	    };
 	    process.connection.onmessage = process.serverMessage;
 
@@ -160,8 +161,6 @@ var process = {
 			}
 		}
 
-		console.log(process.tryParameters);
-
 		process.nextParameter();
 	},
 	
@@ -172,12 +171,10 @@ var process = {
 		// some additional checks
 		switch (process.currentParameter) {
 		case "ringSizeInc":
-			console.log("ringSizeInc, vectorRings = 3");
 			process.input.vectorRings = 3;
 			break;
 		case "matchingOffset":
 			if (process.input.matchStride != 3) {
-				console.log("Skipping matchingOffset.");
 				process.nextParameter();
 				return;
 			}
@@ -225,7 +222,6 @@ var process = {
 
 		process.currentValue = process.tryValues.shift();
 		newInput[process.currentParameter] = process.currentValue;
-		console.log(process.currentParameter +" = "+ process.currentValue);
 
 		// send image for processing
 		process.connection.send(JSON.stringify(newInput));
@@ -297,7 +293,6 @@ var process = {
 	 * Close connection
 	 */
 	closeConnection: function() {
-		console.log("Closing connection.");
 		if (process.connection == null) {
 			return;
 		}
@@ -306,10 +301,6 @@ var process = {
 			process.connection.close();
 			process.connection = null;
 		} catch(e) {}
-
-		main.buttonSIVQ.removeAttr("disabled");
-		main.buttonAdjustParameters.removeAttr("disabled");
-		main.buttonStop.hide();
 	},
 	
 	/*
